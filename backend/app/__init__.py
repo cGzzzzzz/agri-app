@@ -1,0 +1,1 @@
+"""AgriAI backend application package."""

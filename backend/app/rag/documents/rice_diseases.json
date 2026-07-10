@@ -1,0 +1,44 @@
+[
+  {
+    "crop": "Rice",
+    "disease": "Rice Blast",
+    "type": "symptoms",
+    "content": "Rice Blast symptoms: Diamond-shaped lesions on leaves with gray centers and brown borders. Lesions may coalesce causing large blighted areas. On stems, lesions are elliptical and can cause neck blast panicle blighting."
+  },
+  {
+    "crop": "Rice",
+    "disease": "Rice Blast",
+    "type": "treatment",
+    "content": "Rice Blast treatment: Apply Tricyclazole (75% WP) at 0.6g/L or Isoprothiolane (40% EC) at 1.5ml/L as foliar spray. For organic farms, use Trichoderma viride (2g/L) or Pseudomonas fluorescens (5g/L). Remove and destroy infected plant debris."
+  },
+  {
+    "crop": "Rice",
+    "disease": "Rice Blast",
+    "type": "prevention",
+    "content": "Rice Blast prevention: Use resistant varieties (e.g., improved basmati types). Maintain balanced nitrogen fertilization. Avoid dense planting. Ensure proper water management - avoid prolonged standing water. Seed treatment with Trichoderma viride before planting."
+  },
+  {
+    "crop": "Rice",
+    "disease": "Brown Spot",
+    "type": "symptoms",
+    "content": "Rice Brown Spot symptoms: Small, oval to circular brown spots on leaves, sometimes with yellow halo. Spots may have gray or white centers. Severe infection causes leaf yellowing and drying."
+  },
+  {
+    "crop": "Rice",
+    "disease": "Brown Spot",
+    "type": "treatment",
+    "content": "Brown Spot treatment: Apply Mancozeb (75% WP) at 2.5g/L or Carbendazim (50% WP) at 1g/L. Improve soil fertility as brown spot is often associated with nutrient-deficient soils. Ensure balanced NPK fertilization."
+  },
+  {
+    "crop": "Rice",
+    "disease": "Bacterial Blight",
+    "type": "symptoms",
+    "content": "Rice Bacterial Blight symptoms: Water-soaked lesions on leaf tips and edges that extend inward. Yellow to white stripes along leaf veins. Bacterial ooze (yellow droplets) on leaf surface in humid conditions."
+  },
+  {
+    "crop": "Rice",
+    "disease": "Bacterial Blight",
+    "type": "treatment",
+    "content": "Bacterial Blight treatment: No direct chemical cure. Use copper-based bactericides (Copper hydroxide 77% WP at 2g/L) for suppression. Remove infected plants. Use resistant varieties. Maintain proper water management."
+  }
+]

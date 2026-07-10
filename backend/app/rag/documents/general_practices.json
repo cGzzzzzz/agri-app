@@ -1,0 +1,32 @@
+[
+  {
+    "crop": "General",
+    "disease": "Integrated Pest Management",
+    "type": "knowledge",
+    "content": "Integrated Pest Management (IPM) principles: Combine cultural, biological, and chemical control methods. Monitor pest populations regularly. Use pest thresholds to decide when to spray. Rotate chemical classes to prevent resistance. Encourage natural predators."
+  },
+  {
+    "crop": "General",
+    "disease": "Soil Health",
+    "type": "knowledge",
+    "content": "Soil health best practices: Test soil annually for pH, NPK, and micronutrients. Maintain organic matter above 2%. Use crop rotation to break disease cycles. Avoid soil compaction. Consider green manure crops between seasons."
+  },
+  {
+    "crop": "General",
+    "disease": "Water Management",
+    "type": "knowledge",
+    "content": "Water management for disease prevention: Avoid overhead irrigation when possible. Water early in the morning so foliage dries quickly. Ensure proper drainage to prevent waterlogging. Drip irrigation reduces foliar disease pressure significantly."
+  },
+  {
+    "crop": "General",
+    "disease": "Organic Treatment",
+    "type": "knowledge",
+    "content": "Organic disease management: Neem oil (2ml/L) acts as broad-spectrum fungicide and insecticide. Trichoderma viride (2g/L) as soil drench for root diseases. Pseudomonas fluorescens (5g/L) foliar spray for bacterial diseases. Bordeaux mixture (1%) for fungal diseases."
+  },
+  {
+    "crop": "General",
+    "disease": "Weather Impact",
+    "type": "knowledge",
+    "content": "Weather impact on crop diseases: High humidity (>80%) promotes fungal diseases. Rain splash spreads soil-borne pathogens. Warm temperatures (25-30C) accelerate disease development. Cool, wet conditions favor downy mildews and bacterial diseases."
+  }
+]

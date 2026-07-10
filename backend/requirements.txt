@@ -1,0 +1,30 @@
+fastapi>=0.115.6
+uvicorn>=0.34.0
+SQLAlchemy>=2.0.36
+alembic>=1.14.0
+pydantic>=2.10.4
+pydantic-settings>=2.7.0
+python-jose[cryptography]>=3.3.0
+passlib>=1.7.4
+python-multipart>=0.0.20
+email-validator>=2.2.0
+httpx>=0.27.0
+
+# ML / Vision
+onnxruntime>=1.17.0
+Pillow>=10.0.0
+numpy>=1.26.0
+opencv-python-headless>=4.8.0
+
+# Deep Learning (training + XAI)
+torch>=2.1.0
+torchvision>=0.16.0
+timm>=0.9.12
+ultralytics>=8.1.0
+albumentations>=1.3.0
+
+# LLM
+openai>=1.10.0
+
+# Optional PostgreSQL driver. SQLite works without it.
+psycopg[binary]>=3.2.0; python_version < "3.14"

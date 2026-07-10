@@ -1,0 +1,3 @@
+from app.models_ml.registry.model_registry import ModelRegistry
+
+__all__ = ["ModelRegistry"]

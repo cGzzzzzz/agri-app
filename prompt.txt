@@ -1,0 +1,169 @@
+CRITICAL REQUIREMENT:
+
+Do NOT implement temporary architecture, fake business logic, placeholder systems, mock pipelines, toy implementations, or "pretend architecture".
+
+Build the actual production architecture immediately.
+
+If a component depends on future model training, implement the actual interfaces, registries, loading mechanisms, artifact structure, model versioning, evaluation hooks, and inference pipeline now.
+
+Missing model weights are acceptable.
+Missing architecture is not acceptable.
+
+The system must be architecturally complete even if some models are untrained.
+
+Examples:
+
+BAD:
+
+predict_disease():
+    return "Rice Blast"
+
+GOOD:
+
+crop = CropPredictor.predict(image)
+
+model = DiseaseModelRegistry.get_model(crop)
+
+disease = model.predict(image)
+
+severity = SeverityEstimator.predict(
+    crop,
+    disease,
+    image
+)
+
+recommendation = RecommendationEngine.generate(
+    crop,
+    disease,
+    severity,
+    weather,
+    crop_stage,
+    history
+)
+
+response = ResponseGenerator.generate(
+    recommendation
+)
+
+------------------------------------------------
+
+Model system requirements:
+
+Implement:
+
+models/
+│
+├── crop/
+│
+├── disease/
+│   ├── rice/
+│   ├── tomato/
+│   ├── banana/
+│   └── ...
+│
+├── severity/
+│
+├── registry/
+│
+├── training/
+│
+├── evaluation/
+│
+└── artifacts/
+
+Model Registry responsibilities:
+
+- model discovery
+- lazy loading
+- versioning
+- metadata
+- model capability declaration
+- fallback handling
+
+Model metadata example:
+
+{
+    "name": "rice_disease_v1",
+    "version": "1.0.0",
+    "crop": "rice",
+    "framework": "pytorch",
+    "task": "disease_detection",
+    "classes": [
+        "blast",
+        "brown_spot",
+        "healthy"
+    ]
+}
+
+Training architecture requirements:
+
+Implement training interfaces now.
+
+class BaseTrainer:
+    train()
+    evaluate()
+    export()
+
+class DiseaseTrainer(BaseTrainer)
+
+class SeverityTrainer(BaseTrainer)
+
+Implement dataset abstractions:
+
+DatasetRegistry
+DatasetLoader
+DatasetVersion
+DatasetMetadata
+
+Future model training should only require:
+
+1. Add dataset
+2. Train model
+3. Register artifact
+
+No backend changes should be required.
+
+------------------------------------------------
+
+Orchestrator requirements:
+
+The orchestrator must implement the actual production inference flow.
+
+Input
+↓
+Context Builder
+↓
+Crop Resolution
+↓
+Disease Detection
+↓
+Severity Estimation
+↓
+Weather Context
+↓
+Recommendation Engine
+↓
+Response Builder
+↓
+API Response
+
+------------------------------------------------
+
+Do not optimize for implementation speed.
+
+Optimize for:
+
+- architectural integrity
+- extensibility
+- model lifecycle management
+- future scale
+- maintainability
+
+The current implementation should already resemble the architecture of a mature production AI platform.
+
+Temporary implementations are forbidden.
+
+Architecture debt is forbidden.
+
+Infrastructure simplifications are acceptable.
+Domain simplifications are not.

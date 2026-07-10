@@ -1,0 +1,38 @@
+[
+  {
+    "crop": "Tomato",
+    "disease": "Early Blight",
+    "type": "symptoms",
+    "content": "Tomato Early Blight symptoms: Dark brown to black concentric ring spots on older leaves first. Spots enlarge and may cause yellowing and defoliation. Stem and fruit lesions possible. Caused by Alternaria solani."
+  },
+  {
+    "crop": "Tomato",
+    "disease": "Early Blight",
+    "type": "treatment",
+    "content": "Tomato Early Blight treatment: Apply Mancozeb (75% WP) at 2.5g/L or Chlorothalonil (75% WP) at 2g/L. Alternate with Azoxystrobin (23% SC) at 1ml/L. Apply at 7-10 day intervals during wet weather."
+  },
+  {
+    "crop": "Tomato",
+    "disease": "Late Blight",
+    "type": "symptoms",
+    "content": "Tomato Late Blight symptoms: Water-soaked, greenish-dark lesions on leaves. White fuzzy growth on leaf undersides in humid conditions. Rapid plant death in severe infections. Caused by Phytophthora infestans."
+  },
+  {
+    "crop": "Tomato",
+    "disease": "Late Blight",
+    "type": "treatment",
+    "content": "Tomato Late Blight treatment: Apply Metalaxyl + Mancozeb (Ridomil Gold) at 2.5g/L or Fosetyl Aluminum (80% WP) at 2.5g/L. Remove and destroy infected plants immediately. Spray before rain events."
+  },
+  {
+    "crop": "Tomato",
+    "disease": "Leaf Curl",
+    "type": "symptoms",
+    "content": "Tomato Leaf Curl (TYLCV) symptoms: Upward curling and cupping of leaves. Yellowing of leaf margins. Stunted growth. Reduced fruit set. Transmitted by whitefly (Bemisia tabaci)."
+  },
+  {
+    "crop": "Tomato",
+    "disease": "Leaf Curl",
+    "type": "treatment",
+    "content": "Tomato Leaf Curl treatment: No direct cure for viral infection. Control whitefly vector using Imidacloprid (17.8% SL) at 0.3ml/L or Thiamethoxam (25% WG) at 0.3g/L. Remove infected plants. Use reflective mulches to repel whiteflies."
+  }
+]
