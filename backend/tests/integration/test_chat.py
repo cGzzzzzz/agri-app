@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
 
@@ -13,7 +13,7 @@ class TestChatFlow:
             mock_conv.input_type = "text"
             mock_conv.question = "My rice leaves have brown spots"
             mock_conv.response = "Your rice crop may have leaf blast"
-            mock_conv.created_at = datetime.now(UTC)
+            mock_conv.created_at = datetime.now(timezone.utc)
             MockChat.return_value.send.return_value = (mock_conv, {})
 
             resp = client.post(

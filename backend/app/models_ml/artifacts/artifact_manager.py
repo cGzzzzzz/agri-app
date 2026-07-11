@@ -1,7 +1,7 @@
 import json
 import logging
 import shutil
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from app.models_ml.registry.model_registry import ModelMetadata
@@ -34,7 +34,7 @@ class ArtifactManager:
         logger.info("Saved model artifact: %s", model_path)
 
         metadata.artifact_path = str(model_path)
-        metadata.created_at = datetime.now(UTC).isoformat()
+        metadata.created_at = datetime.now(timezone.utc).isoformat()
         meta_path = target / "metadata.json"
         meta_path.write_text(json.dumps(metadata.to_dict(), indent=2), encoding="utf-8")
         logger.info("Saved metadata: %s", meta_path)

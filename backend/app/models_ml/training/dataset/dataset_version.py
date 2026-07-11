@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 
 @dataclass
@@ -11,7 +11,7 @@ class DatasetVersion:
 
     def __post_init__(self):
         if not self.created_at:
-            self.created_at = datetime.now(UTC).isoformat()
+            self.created_at = datetime.now(timezone.utc).isoformat()
 
     @property
     def total_samples(self) -> int:

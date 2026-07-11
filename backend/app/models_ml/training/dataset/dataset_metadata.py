@@ -1,6 +1,6 @@
 import json
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 from app.models_ml.training.dataset.dataset_version import DatasetVersion
 
@@ -21,7 +21,7 @@ class DatasetMetadata:
 
     def __post_init__(self):
         if not self.created_at:
-            self.created_at = datetime.now(UTC).isoformat()
+            self.created_at = datetime.now(timezone.utc).isoformat()
 
     @property
     def latest_version(self) -> DatasetVersion | None:

@@ -1,5 +1,5 @@
 import logging
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 import httpx
 
@@ -19,12 +19,12 @@ class OpenMeteoWeatherProvider(WeatherProvider):
     def _get_cached(self, key: str) -> dict | None:
         if key in self._cache:
             ts, data = self._cache[key]
-            if (datetime.now(UTC).timestamp() - ts) < self._cache_ttl:
+            if (datetime.now(timezone.utc).timestamp() - ts) < self._cache_ttl:
                 return data
         return None
 
     def _set_cached(self, key: str, data: dict) -> None:
-        self._cache[key] = (datetime.now(UTC).timestamp(), data)
+        self._cache[key] = (datetime.now(timezone.utc).timestamp(), data)
 
     def _geocode(self, location: str) -> tuple[float, float] | None:
         cache_key = f"geo:{location}"
@@ -112,7 +112,7 @@ class OpenMeteoWeatherProvider(WeatherProvider):
                     "humidity_percent": humidity,
                     "precipitation_probability_percent": rain_prob,
                     "wind_kph": wind,
-                    "observed_at": datetime.now(UTC).isoformat(),
+                    "observed_at": datetime.now(timezone.utc).isoformat(),
                     "advisory": advisory,
                     "source": "open-meteo",
                 }
@@ -260,7 +260,7 @@ class OpenMeteoWeatherProvider(WeatherProvider):
             "humidity_percent": None,
             "precipitation_probability_percent": None,
             "wind_kph": None,
-            "observed_at": datetime.now(UTC).isoformat(),
+            "observed_at": datetime.now(timezone.utc).isoformat(),
             "advisory": "Weather-dependent advice is unavailable until the provider returns an observation.",
             "source": "open-meteo",
             "status": "unavailable",

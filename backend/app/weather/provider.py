@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 
 class WeatherProvider(ABC):
@@ -24,7 +24,7 @@ class UnavailableWeatherProvider(WeatherProvider):
             "humidity_percent": None,
             "precipitation_probability_percent": None,
             "wind_kph": None,
-            "observed_at": datetime.now(UTC).isoformat(),
+            "observed_at": datetime.now(timezone.utc).isoformat(),
             "advisory": "Weather-dependent advice is unavailable until a provider is configured.",
             "source": "unavailable",
             "status": "unavailable",
