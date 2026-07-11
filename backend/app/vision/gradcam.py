@@ -1,6 +1,5 @@
 import base64
 import logging
-from pathlib import Path
 
 import numpy as np
 
@@ -50,12 +49,11 @@ class GradCAMGenerator:
         class_idx: int,
     ) -> np.ndarray | None:
         try:
-            import onnxruntime as ort
-
-            input_meta = session.get_inputs()[0]
             output_meta = session.get_outputs()
 
-            grad_output = np.zeros_like(output_meta[0].shape if output_meta else [1, 1000], dtype=np.float32)
+            grad_output = np.zeros_like(
+                output_meta[0].shape if output_meta else [1, 1000], dtype=np.float32
+            )
             if grad_output.ndim >= 2:
                 grad_output[0][class_idx] = 1.0
 
@@ -69,15 +67,23 @@ class GradCAMGenerator:
         else:
             weights = gradient.flatten()
 
-        spatial_size = image_tensor.shape[2] * image_tensor.shape[3] if image_tensor.ndim == 4 else 224 * 224
+        spatial_size = (
+            image_tensor.shape[2] * image_tensor.shape[3] if image_tensor.ndim == 4 else 224 * 224
+        )
         min_len = min(len(weights), spatial_size)
 
-        if min_len > 0:
-            cam = np.zeros(spatial_size, dtype=np.float32)
-            cam[:min_len] = weights[:min_len]
-            cam = cam.reshape(image_tensor.shape[2], image_tensor.shape[3]) if image_tensor.ndim == 4 else cam.reshape(224, 224)
-        else:
-            cam = np.zeros((224, 224), dtype=np.float32)
+        if min_len <= 0:
+            raise RuntimeError(
+                "GradCAM computation failed — no valid weights to compute activation map."
+            )
+
+        cam = np.zeros(spatial_size, dtype=np.float32)
+        cam[:min_len] = weights[:min_len]
+        cam = (
+            cam.reshape(image_tensor.shape[2], image_tensor.shape[3])
+            if image_tensor.ndim == 4
+            else cam.reshape(224, 224)
+        )
 
         cam = np.maximum(cam, 0)
         cam_max = cam.max()
@@ -133,14 +139,20 @@ class GradCAMGenerator:
             image_pixels = image_pixels.transpose(1, 2, 0)
 
         img_uint8 = (np.clip(image_pixels, 0, 1) * 255).astype(np.uint8)
-        heatmap_resized = np.array(
-            __import__("PIL").Image.fromarray((heatmap * 255).astype(np.uint8)).resize(
-                (img_uint8.shape[1], img_uint8.shape[0])
-            ),
-            dtype=np.float32,
-        ) / 255.0
+        heatmap_resized = (
+            np.array(
+                __import__("PIL")
+                .Image.fromarray((heatmap * 255).astype(np.uint8))
+                .resize((img_uint8.shape[1], img_uint8.shape[0])),
+                dtype=np.float32,
+            )
+            / 255.0
+        )
 
-        heatmap_colored = self._apply_colormap((heatmap_resized * 255).astype(np.uint8)).astype(np.float32) / 255.0
+        heatmap_colored = (
+            self._apply_colormap((heatmap_resized * 255).astype(np.uint8)).astype(np.float32)
+            / 255.0
+        )
 
         overlay = (1 - alpha) * img_uint8.astype(np.float32) / 255.0 + alpha * heatmap_colored
         return (np.clip(overlay, 0, 1) * 255).astype(np.uint8)

@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../../../models/user.dart';
 import '../../../services/api_service.dart';
 import '../../../services/auth_service.dart';
-import '../main_navigation.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -58,12 +57,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
           refreshToken: tokens['refresh_token'],
           user: user,
         );
-        if (mounted) {
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => const MainNavigation()),
-            (route) => false,
-          );
-        }
       } else {
         setState(() => _error = 'Registration failed. Email may already be in use.');
       }

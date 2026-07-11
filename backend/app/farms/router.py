@@ -12,7 +12,11 @@ router = APIRouter(prefix="/farms", tags=["farms"])
 
 
 @router.post("")
-def create_farm(payload: FarmCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def create_farm(
+    payload: FarmCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     farm = Farm(user_id=current_user.id, **payload.model_dump())
     farm = FarmRepository(db).add(farm)
     return ok(FarmRead.model_validate(farm), "Farm created")
@@ -25,7 +29,9 @@ def list_farms(db: Session = Depends(get_db), current_user: User = Depends(get_c
 
 
 @router.get("/{farm_id}")
-def get_farm(farm_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def get_farm(
+    farm_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+):
     farm = db.get(Farm, farm_id)
     if farm is None or farm.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Farm not found")
@@ -33,7 +39,12 @@ def get_farm(farm_id: int, db: Session = Depends(get_db), current_user: User = D
 
 
 @router.patch("/{farm_id}")
-def update_farm(farm_id: int, payload: FarmUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def update_farm(
+    farm_id: int,
+    payload: FarmUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     farm = db.get(Farm, farm_id)
     if farm is None or farm.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Farm not found")
@@ -45,7 +56,9 @@ def update_farm(farm_id: int, payload: FarmUpdate, db: Session = Depends(get_db)
 
 
 @router.delete("/{farm_id}")
-def delete_farm(farm_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def delete_farm(
+    farm_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+):
     farm = db.get(Farm, farm_id)
     if farm is None or farm.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Farm not found")

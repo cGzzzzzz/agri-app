@@ -21,9 +21,15 @@ class Farm(Base):
     latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
     longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
 
     user: Mapped["User"] = relationship(back_populates="farms")
     crops: Mapped[list["Crop"]] = relationship(back_populates="farm", cascade="all, delete-orphan")
-    images: Mapped[list["ImageAsset"]] = relationship(back_populates="farm", cascade="all, delete-orphan")
-    predictions: Mapped[list["Prediction"]] = relationship(back_populates="farm", cascade="all, delete-orphan")
+    images: Mapped[list["ImageAsset"]] = relationship(
+        back_populates="farm", cascade="all, delete-orphan"
+    )
+    predictions: Mapped[list["Prediction"]] = relationship(
+        back_populates="farm", cascade="all, delete-orphan"
+    )

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../core/constants/api_constants.dart';
@@ -10,6 +11,8 @@ class ApiService {
   final AuthService _auth;
   ApiService(this._auth);
 
+  static const _timeout = Duration(seconds: 15);
+
   Map<String, String> get _headers => {
         'Content-Type': 'application/json',
         ..._auth.authHeaders,
@@ -17,7 +20,7 @@ class ApiService {
 
   Future<Map<String, dynamic>?> _get(String url) async {
     try {
-      final response = await http.get(Uri.parse('${Api.baseUrl}$url'), headers: _headers);
+      final response = await http.get(Uri.parse('${Api.baseUrl}$url'), headers: _headers).timeout(_timeout);
       if (response.statusCode == 200) {
         final body = json.decode(response.body);
         return body is Map<String, dynamic> ? body : null;
@@ -34,7 +37,7 @@ class ApiService {
         Uri.parse('${Api.baseUrl}$url'),
         headers: _headers,
         body: json.encode(data),
-      );
+      ).timeout(_timeout);
       if (response.statusCode == 200 || response.statusCode == 201) {
         return json.decode(response.body) as Map<String, dynamic>;
       }
@@ -50,7 +53,7 @@ class ApiService {
         Uri.parse('${Api.baseUrl}$url'),
         headers: _headers,
         body: json.encode(data),
-      );
+      ).timeout(_timeout);
       if (response.statusCode == 200) {
         return json.decode(response.body) as Map<String, dynamic>;
       }
@@ -62,7 +65,7 @@ class ApiService {
 
   Future<Map<String, dynamic>?> _delete(String url) async {
     try {
-      final response = await http.delete(Uri.parse('${Api.baseUrl}$url'), headers: _headers);
+      final response = await http.delete(Uri.parse('${Api.baseUrl}$url'), headers: _headers).timeout(_timeout);
       if (response.statusCode == 200) {
         return json.decode(response.body) as Map<String, dynamic>;
       }
@@ -226,10 +229,15 @@ class ApiService {
 
   // ─── Weather ───
 
-  Future<Map<String, dynamic>> getWeather({String? location}) async {
-    final url = location != null
-        ? '${ApiEndpoints.weatherCurrent}?location=$location'
-        : ApiEndpoints.weatherCurrent;
+  Future<Map<String, dynamic>> getWeather({String? location, double? lat, double? lng}) async {
+    String url;
+    if (lat != null && lng != null) {
+      url = '${ApiEndpoints.weatherCurrent}?lat=$lat&lng=$lng';
+    } else if (location != null) {
+      url = '${ApiEndpoints.weatherCurrent}?location=$location';
+    } else {
+      url = ApiEndpoints.weatherCurrent;
+    }
     final result = await _get(url);
     final data = _extractData(result);
     if (data != null) return data;
@@ -257,8 +265,7 @@ class ApiService {
     try {
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('${Api.baseUrl}${ApiEndpoints.diseaseAnalyze}',
-        ),
+        Uri.parse('${Api.baseUrl}${ApiEndpoints.diseaseAnalyze}'),
       );
       request.files.add(await http.MultipartFile.fromPath('file', filePath));
       if (farmId != null) request.fields['farm_id'] = farmId.toString();
@@ -267,7 +274,7 @@ class ApiService {
       final headers = _auth.authHeaders;
       headers.forEach((k, v) => request.headers[k] = v);
 
-      final streamedResponse = await request.send();
+      final streamedResponse = await request.send().timeout(_timeout);
       final response = await http.Response.fromStream(streamedResponse);
       if (response.statusCode == 200) {
         final body = json.decode(response.body) as Map<String, dynamic>;
@@ -276,11 +283,33 @@ class ApiService {
     } catch (e) {
       debugPrint('Scan API error: $e');
     }
-    return {
-      'disease': {'label': 'Rice Blast', 'confidence': 0.91},
-      'severity': {'label': 'moderate', 'score': 0.55},
-      'response': 'Offline mode. Connect to the backend for real analysis.',
-    };
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> scanLeafBytes(Uint8List bytes, {String fileName = 'leaf.jpg', int? farmId, int? cropId, String? cropType}) async {
+    try {
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('${Api.baseUrl}${ApiEndpoints.diseaseAnalyze}'),
+      );
+      request.files.add(http.MultipartFile.fromBytes('file', bytes, filename: fileName));
+      if (farmId != null) request.fields['farm_id'] = farmId.toString();
+      if (cropId != null) request.fields['crop_id'] = cropId.toString();
+      if (cropType != null && cropType.isNotEmpty) request.fields['crop'] = cropType;
+
+      final headers = _auth.authHeaders;
+      headers.forEach((k, v) => request.headers[k] = v);
+
+      final streamedResponse = await request.send().timeout(_timeout);
+      final response = await http.Response.fromStream(streamedResponse);
+      if (response.statusCode == 200) {
+        final body = json.decode(response.body) as Map<String, dynamic>;
+        return _extractData(body);
+      }
+    } catch (e) {
+      debugPrint('Scan bytes API error: $e');
+    }
+    return null;
   }
 
   Future<List<Map<String, dynamic>>> getScanHistory() async {
@@ -341,8 +370,31 @@ class ApiService {
     if (list == null) return [];
     return list.cast<Map<String, dynamic>>();
   }
+
+  Future<Map<String, String?>> transcribeAudio(Uint8List audioBytes, String filename, {String language = 'en', int sampleRate = 48000, int channels = 1}) async {
+    try {
+      final uri = Uri.parse('${Api.baseUrl}/api/v1/stt/transcribe');
+      final request = http.MultipartRequest('POST', uri)
+        ..headers.addAll(_auth.authHeaders)
+        ..fields['language'] = language
+        ..fields['sample_rate'] = sampleRate.toString()
+        ..fields['channels'] = channels.toString()
+        ..files.add(http.MultipartFile.fromBytes('file', audioBytes, filename: filename));
+      final streamed = await request.send().timeout(_timeout);
+      final response = await http.Response.fromStream(streamed);
+      final body = json.decode(response.body);
+      if (response.statusCode == 200 && body['success'] == true) {
+        final data = body['data'];
+        if (data is Map<String, dynamic>) return {'text': data['text'] as String?};
+      }
+      return {'error': body['message'] as String? ?? 'Transcription failed'};
+    } catch (e) {
+      debugPrint('transcribeAudio error: $e');
+      return {'error': 'Network error — is the backend running?'};
+    }
+  }
 }
 
 class Api {
-  static const String baseUrl = 'http://192.168.0.199:8000';
+  static String get baseUrl => kIsWeb ? 'http://localhost:8000' : 'http://192.168.0.199:8000';
 }

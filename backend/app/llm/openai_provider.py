@@ -1,6 +1,5 @@
 import json
 import logging
-from typing import Any
 
 from app.llm.provider import LLMProvider
 
@@ -16,6 +15,7 @@ class OpenAIProvider(LLMProvider):
     def _get_client(self):
         if self._client is None:
             from openai import OpenAI
+
             self._client = OpenAI(api_key=self._api_key)
         return self._client
 
@@ -31,17 +31,22 @@ class OpenAIProvider(LLMProvider):
         self,
         system_prompt: str,
         user_prompt: str,
+        messages: list[dict] | None = None,
         temperature: float = 0.7,
         max_tokens: int = 1024,
     ) -> str:
         try:
             client = self._get_client()
-            response = client.chat.completions.create(
-                model=self._model,
-                messages=[
+            if messages:
+                msg_list = messages
+            else:
+                msg_list = [
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},
-                ],
+                ]
+            response = client.chat.completions.create(
+                model=self._model,
+                messages=msg_list,
                 temperature=temperature,
                 max_tokens=max_tokens,
             )

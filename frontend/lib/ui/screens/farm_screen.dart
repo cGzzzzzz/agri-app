@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../models/farm.dart';
 import '../../models/crop.dart';
@@ -71,7 +72,12 @@ class _FarmScreenState extends State<FarmScreen> {
                 ],
               ),
               const SizedBox(height: 12),
-              TextField(controller: areaCtrl, decoration: const InputDecoration(labelText: 'Area (Acres)'), keyboardType: TextInputType.number),
+              TextField(
+                controller: areaCtrl,
+                decoration: const InputDecoration(labelText: 'Area (Acres)', hintText: 'e.g., 10.0'),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+              ),
             ],
           ),
         ),
@@ -119,7 +125,12 @@ class _FarmScreenState extends State<FarmScreen> {
               const SizedBox(height: 12),
               TextField(controller: varietyCtrl, decoration: const InputDecoration(labelText: 'Variety', hintText: 'e.g., Basmati')),
               const SizedBox(height: 12),
-              TextField(controller: sizeCtrl, decoration: const InputDecoration(labelText: 'Field Size (Acres)'), keyboardType: TextInputType.number),
+              TextField(
+                controller: sizeCtrl,
+                decoration: const InputDecoration(labelText: 'Field Size (Acres)', hintText: 'e.g., 2.5'),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+              ),
             ],
           ),
         ),

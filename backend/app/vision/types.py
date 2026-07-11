@@ -42,7 +42,9 @@ class XAIPrediction:
     evidence: list[str]
     rules_fired: list[str]
     heatmap_hint: str | None = None
-    model_name: str = "local-xai-baseline"
+    model_name: str = ""
+    status: str = "available"
+    unavailable_reason: str | None = None
 
 
 @dataclass
@@ -51,7 +53,9 @@ class XAISeverity:
     score: float
     evidence: list[str]
     rules_fired: list[str]
-    model_name: str = "local-xai-baseline"
+    model_name: str = ""
+    status: str = "available"
+    unavailable_reason: str | None = None
 
 
 @dataclass

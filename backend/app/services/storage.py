@@ -15,7 +15,9 @@ class LocalFileStorage:
         self.image_dir = self.root / "images"
         self.image_dir.mkdir(parents=True, exist_ok=True)
 
-    async def save_image(self, db: Session, user_id: int, file: UploadFile, farm_id: int | None = None) -> ImageAsset:
+    async def save_image(
+        self, db: Session, user_id: int, file: UploadFile, farm_id: int | None = None
+    ) -> ImageAsset:
         suffix = Path(file.filename or "upload.jpg").suffix or ".jpg"
         filename = f"{uuid4().hex}{suffix.lower()}"
         storage_path = self.image_dir / filename

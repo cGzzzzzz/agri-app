@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../models/crop.dart';
 import '../../../services/api_service.dart';
 import '../../../services/auth_service.dart';
+import '../../../services/location_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -13,8 +15,10 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   bool _isLoading = true;
   Map<String, dynamic> _weather = {};
-  List<dynamic> _crops = [];
+  List<AppCrop> _crops = [];
   String _userName = 'Farmer';
+  bool _gpsAvailable = false;
+  String _gpsStatus = '';
 
   @override
   void initState() {
@@ -23,19 +27,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _loadData() async {
-    final auth = Provider.of<AuthService>(context, listen: false);
-    final api = ApiService(auth);
-    final weatherData = await api.getWeather();
-    final crops = await api.listCrops();
-    final user = auth.user;
+    try {
+      final auth = Provider.of<AuthService>(context, listen: false);
+      final api = ApiService(auth);
 
-    if (mounted) {
-      setState(() {
-        _weather = weatherData;
-        _crops = crops;
-        _userName = user?.name ?? 'Farmer';
-        _isLoading = false;
-      });
+      final position = await LocationService.getCurrentLocation();
+      if (mounted) {
+        setState(() {
+          _gpsAvailable = position != null;
+          _gpsStatus = position != null ? '' : 'No GPS available';
+        });
+      }
+
+      final results = await Future.wait([
+        api.getWeather(lat: position?.latitude, lng: position?.longitude),
+        api.listCrops(),
+      ]);
+
+      if (mounted) {
+        setState(() {
+          _weather = results[0] as Map<String, dynamic>;
+          _crops = results[1] as List<AppCrop>;
+          _userName = auth.user?.name ?? 'Farmer';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Dashboard load error: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -85,6 +108,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(height: 24),
 
               // Weather
+              if (!_gpsAvailable && _gpsStatus.isNotEmpty)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.orange.shade200),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.location_off_outlined, size: 16, color: Colors.orange.shade700),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(_gpsStatus, style: TextStyle(fontSize: 12, color: Colors.orange.shade700)),
+                      ),
+                    ],
+                  ),
+                ),
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -136,8 +178,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              _buildFieldMetric('Crop Type', crop['crop_type'] ?? 'None'),
-                              _buildFieldMetric('Field Size', '${crop['field_size'] ?? '--'} Acres'),
+                           _buildFieldMetric('Crop Type', crop.cropType),
+                               _buildFieldMetric('Field Size', '${crop.fieldSize ?? '--'} Acres'),
                             ],
                           ),
                           const SizedBox(height: 16),
@@ -146,8 +188,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              _buildFieldMetric('Variety', crop['crop_variety'] ?? 'Standard'),
-                              _buildFieldMetric('Sowing Date', crop['sowing_date'] ?? 'N/A'),
+                               _buildFieldMetric('Variety', crop.cropVariety ?? 'Standard'),
+                               _buildFieldMetric('Irrigation', crop.irrigationType ?? 'N/A'),
                             ],
                           ),
                         ],

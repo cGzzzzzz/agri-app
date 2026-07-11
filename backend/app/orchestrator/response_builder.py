@@ -14,6 +14,7 @@ class ResponseBuilder:
             return self._llm
         try:
             from app.llm.provider import get_llm_provider
+
             self._llm = get_llm_provider()
             return self._llm
         except Exception:
@@ -26,7 +27,9 @@ class ResponseBuilder:
             try:
                 return self._generate_with_llm(llm, recommendation)
             except Exception:
-                logger.warning("LLM response generation failed, falling back to rule-based", exc_info=True)
+                logger.warning(
+                    "LLM response generation failed, falling back to rule-based", exc_info=True
+                )
 
         return self._generate_rule_based(recommendation)
 
@@ -53,8 +56,16 @@ class ResponseBuilder:
         return self._generate_rule_based(recommendation)
 
     def _generate_rule_based(self, recommendation: dict) -> str:
-        next_step = recommendation.get("next_steps", ["Keep monitoring the crop."])[0] if recommendation.get("next_steps") else "Keep monitoring the crop."
-        weather_note = recommendation.get("weather_constraints", [""])[0] if recommendation.get("weather_constraints") else ""
+        next_step = (
+            recommendation.get("next_steps", ["Keep monitoring the crop."])[0]
+            if recommendation.get("next_steps")
+            else "Keep monitoring the crop."
+        )
+        weather_note = (
+            recommendation.get("weather_constraints", [""])[0]
+            if recommendation.get("weather_constraints")
+            else ""
+        )
         return (
             f"{recommendation.get('title', '')}. {recommendation.get('action', '')} "
             f"Urgency: {recommendation.get('urgency', 'medium')}. {weather_note} Next: {next_step}"

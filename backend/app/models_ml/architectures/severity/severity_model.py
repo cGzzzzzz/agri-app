@@ -10,10 +10,11 @@ class SeverityModel(nn.Module):
         super().__init__()
         try:
             import timm
+
             self.backbone = timm.create_model(backbone, pretrained=pretrained, num_classes=0)
             features = self.backbone.num_features
-        except ImportError:
-            raise ImportError("timm is required. Install with: pip install timm")
+        except ImportError as err:
+            raise ImportError("timm is required. Install with: pip install timm") from err
 
         self.regressor = nn.Sequential(
             nn.Linear(features, 128),
@@ -56,7 +57,9 @@ class SeverityModel(nn.Module):
             if features.dim() == 2:
                 features = features.unsqueeze(-1).unsqueeze(-1)
         spatial_map = features.mean(dim=1, keepdim=True)
-        spatial_map = F.interpolate(spatial_map, size=(224, 224), mode="bilinear", align_corners=False)
+        spatial_map = F.interpolate(
+            spatial_map, size=(224, 224), mode="bilinear", align_corners=False
+        )
         spatial_map = spatial_map - spatial_map.min()
         spatial_map = spatial_map / (spatial_map.max() + 1e-8)
         return spatial_map.squeeze()

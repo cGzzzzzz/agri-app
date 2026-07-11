@@ -184,7 +184,7 @@ class ModelEvaluator:
         accuracy = correct / total if total > 0 else 0.0
 
         confusion = [[0] * num_classes for _ in range(num_classes)]
-        for pred, label in zip(predictions, labels):
+        for pred, label in zip(predictions, labels, strict=False):
             pred_idx = int(pred) if isinstance(pred, (np.integer, int)) else int(np.argmax(pred))
             label_idx = int(label) if isinstance(label, (np.integer, int)) else int(label)
             if 0 <= pred_idx < num_classes and 0 <= label_idx < num_classes:

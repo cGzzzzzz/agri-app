@@ -1,6 +1,6 @@
 import logging
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Iterator
 
 import numpy as np
 
@@ -72,7 +72,9 @@ class DatasetLoader:
 
     def _load_image(self, path: Path) -> np.ndarray | None:
         if Image is None:
-            raise ImportError("Pillow is required for loading images. Install with: pip install Pillow")
+            raise ImportError(
+                "Pillow is required for loading images. Install with: pip install Pillow"
+            )
 
         img = Image.open(path).convert("RGB")
         img = img.resize(self.image_size, Image.BILINEAR)
@@ -94,16 +96,13 @@ class DatasetLoader:
     def to_pytorch_dataset(self):
         try:
             import torch
-            from torch.utils.data import Dataset, DataLoader
+            from torch.utils.data import DataLoader, Dataset
 
             class _TorchDataset(Dataset):
                 def __init__(self, loader: "DatasetLoader"):
                     self._samples = []
                     for img_path, label in loader._samples:
-                        try:
-                            self._samples.append((img_path, label))
-                        except Exception:
-                            pass
+                        self._samples.append((img_path, label))
                     self._loader = loader
 
                 def __len__(self):
@@ -155,9 +154,15 @@ class DatasetLoader:
         val_data = self._samples[train_end:val_end]
         test_data = self._samples[val_end:]
 
-        train_loader = DatasetLoader(self.data_dir, self.class_names, self.image_size, self.batch_size, shuffle=True)
-        val_loader = DatasetLoader(self.data_dir, self.class_names, self.image_size, self.batch_size, shuffle=False)
-        test_loader = DatasetLoader(self.data_dir, self.class_names, self.image_size, self.batch_size, shuffle=False)
+        train_loader = DatasetLoader(
+            self.data_dir, self.class_names, self.image_size, self.batch_size, shuffle=True
+        )
+        val_loader = DatasetLoader(
+            self.data_dir, self.class_names, self.image_size, self.batch_size, shuffle=False
+        )
+        test_loader = DatasetLoader(
+            self.data_dir, self.class_names, self.image_size, self.batch_size, shuffle=False
+        )
 
         train_loader._samples = train_data
         val_loader._samples = val_data

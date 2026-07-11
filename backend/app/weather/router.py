@@ -7,7 +7,13 @@ router = APIRouter(prefix="/weather", tags=["weather"])
 
 
 @router.get("/current")
-def current(location: str | None = Query(default=None)):
+def current(
+    location: str | None = Query(default=None),
+    lat: float | None = Query(default=None),
+    lng: float | None = Query(default=None),
+):
+    if lat is not None and lng is not None:
+        return ok(WeatherService().current_by_coords(lat, lng), "Current weather loaded")
     return ok(WeatherService().current(location), "Current weather loaded")
 
 

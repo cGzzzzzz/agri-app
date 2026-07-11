@@ -1,5 +1,4 @@
 import json
-from datetime import datetime
 
 from sqlalchemy.orm import Session
 
@@ -27,12 +26,14 @@ class PersistenceLayer:
         response: str,
         trace: list[dict],
     ) -> tuple[Prediction, Recommendation]:
-        xai_summary = json.dumps({
-            "crop": crop.evidence,
-            "disease": disease.evidence,
-            "severity": severity.evidence,
-            "rules_fired": crop.rules_fired + disease.rules_fired + severity.rules_fired,
-        })
+        xai_summary = json.dumps(
+            {
+                "crop": crop.evidence,
+                "disease": disease.evidence,
+                "severity": severity.evidence,
+                "rules_fired": crop.rules_fired + disease.rules_fired + severity.rules_fired,
+            }
+        )
 
         prediction = Prediction(
             user_id=input_data.user_id,
@@ -51,7 +52,11 @@ class PersistenceLayer:
         self.db.add(prediction)
         self.db.flush()
 
-        rec_payload = recommendation_payload.model_dump() if hasattr(recommendation_payload, "model_dump") else recommendation_payload
+        rec_payload = (
+            recommendation_payload.model_dump()
+            if hasattr(recommendation_payload, "model_dump")
+            else recommendation_payload
+        )
 
         recommendation = Recommendation(
             user_id=input_data.user_id,

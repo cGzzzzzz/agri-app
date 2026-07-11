@@ -1,7 +1,4 @@
-import base64
-import io
 import logging
-from typing import Any
 
 import numpy as np
 import torch
@@ -58,7 +55,9 @@ class RealGradCAM:
         cam = cam / (cam.max() + 1e-8)
         return cam.squeeze().cpu().numpy()
 
-    def generate_multiple(self, input_tensor: torch.Tensor, class_indices: list[int]) -> dict[int, np.ndarray]:
+    def generate_multiple(
+        self, input_tensor: torch.Tensor, class_indices: list[int]
+    ) -> dict[int, np.ndarray]:
         results = {}
         for idx in class_indices:
             results[idx] = self.generate(input_tensor, idx)

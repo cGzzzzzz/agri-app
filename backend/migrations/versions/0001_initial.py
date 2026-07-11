@@ -4,8 +4,9 @@ Revision ID: 0001_initial
 Revises:
 Create Date: 2026-07-10
 """
-from alembic import op
+
 import sqlalchemy as sa
+from alembic import op
 
 revision = "0001_initial"
 down_revision = None
@@ -160,11 +161,19 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(op.f("ix_recommendations_crop_id"), "recommendations", ["crop_id"], unique=False)
-    op.create_index(op.f("ix_recommendations_farm_id"), "recommendations", ["farm_id"], unique=False)
+    op.create_index(
+        op.f("ix_recommendations_crop_id"), "recommendations", ["crop_id"], unique=False
+    )
+    op.create_index(
+        op.f("ix_recommendations_farm_id"), "recommendations", ["farm_id"], unique=False
+    )
     op.create_index(op.f("ix_recommendations_id"), "recommendations", ["id"], unique=False)
-    op.create_index(op.f("ix_recommendations_prediction_id"), "recommendations", ["prediction_id"], unique=False)
-    op.create_index(op.f("ix_recommendations_user_id"), "recommendations", ["user_id"], unique=False)
+    op.create_index(
+        op.f("ix_recommendations_prediction_id"), "recommendations", ["prediction_id"], unique=False
+    )
+    op.create_index(
+        op.f("ix_recommendations_user_id"), "recommendations", ["user_id"], unique=False
+    )
 
 
 def downgrade() -> None:

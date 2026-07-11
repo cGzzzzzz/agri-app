@@ -18,7 +18,11 @@ def _assert_farm_owner(db: Session, farm_id: int, user_id: int) -> None:
 
 
 @router.post("")
-def create_crop(payload: CropCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def create_crop(
+    payload: CropCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     _assert_farm_owner(db, payload.farm_id, current_user.id)
     crop = Crop(**payload.model_dump())
     crop = CropRepository(db).add(crop)
@@ -32,7 +36,9 @@ def list_crops(db: Session = Depends(get_db), current_user: User = Depends(get_c
 
 
 @router.get("/{crop_id}")
-def get_crop(crop_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def get_crop(
+    crop_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+):
     crop = db.get(Crop, crop_id)
     if crop is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Crop not found")
@@ -41,7 +47,12 @@ def get_crop(crop_id: int, db: Session = Depends(get_db), current_user: User = D
 
 
 @router.patch("/{crop_id}")
-def update_crop(crop_id: int, payload: CropUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def update_crop(
+    crop_id: int,
+    payload: CropUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     crop = db.get(Crop, crop_id)
     if crop is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Crop not found")
@@ -54,7 +65,9 @@ def update_crop(crop_id: int, payload: CropUpdate, db: Session = Depends(get_db)
 
 
 @router.delete("/{crop_id}")
-def delete_crop(crop_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def delete_crop(
+    crop_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+):
     crop = db.get(Crop, crop_id)
     if crop is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Crop not found")

@@ -28,7 +28,9 @@ class HeatmapRenderer:
         heatmap_colored = cv2.applyColorMap(heatmap_uint8, colormap)
         heatmap_colored = cv2.cvtColor(heatmap_colored, cv2.COLOR_BGR2RGB)
 
-        overlay = ((1 - alpha) * img_uint8.astype(np.float32) + alpha * heatmap_colored.astype(np.float32))
+        overlay = (1 - alpha) * img_uint8.astype(np.float32) + alpha * heatmap_colored.astype(
+            np.float32
+        )
         return np.clip(overlay, 0, 255).astype(np.uint8)
 
     def draw_detections(
@@ -70,7 +72,9 @@ class HeatmapRenderer:
             text = f"{label}: {conf:.0%}"
             (tw, th), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
             cv2.rectangle(img, (x1, y1 - th - 8), (x1 + tw + 4, y1), color, -1)
-            cv2.putText(img, text, (x1 + 2, y1 - 4), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+            cv2.putText(
+                img, text, (x1 + 2, y1 - 4), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1
+            )
 
         return img
 

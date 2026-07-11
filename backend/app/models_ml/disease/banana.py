@@ -13,6 +13,7 @@ class BananaDiseaseModel(BaseDiseaseModel):
 
     def _get_artifact_path(self) -> Path | None:
         from app.config import get_settings
+
         settings = get_settings()
         return settings.model_artifacts_dir / "banana_disease_v1" / "model.onnx"
 

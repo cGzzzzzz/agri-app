@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
@@ -15,25 +15,31 @@ class ScanScreen extends StatefulWidget {
 class _ScanScreenState extends State<ScanScreen> {
   bool _isAnalyzing = false;
   Map<String, dynamic>? _result;
-  String? _imagePath;
+  Uint8List? _imageBytes;
+  String _selectedCrop = 'Rice';
 
   final ImagePicker _picker = ImagePicker();
+
+  static const _supportedCrops = [
+    'Rice', 'Tomato', 'Potato', 'Pepper',
+  ];
 
   Future<void> _pickImage(ImageSource source) async {
     final XFile? picked = await _picker.pickImage(source: source, maxWidth: 1024, maxHeight: 1024, imageQuality: 85);
     if (picked == null) return;
+    final bytes = await picked.readAsBytes();
     setState(() {
-      _imagePath = picked.path;
+      _imageBytes = bytes;
       _isAnalyzing = true;
       _result = null;
     });
-    await _analyze(picked.path);
+    await _analyze(bytes);
   }
 
-  Future<void> _analyze(String path) async {
+  Future<void> _analyze(Uint8List bytes) async {
     final auth = Provider.of<AuthService>(context, listen: false);
     final api = ApiService(auth);
-    final result = await api.scanLeaf(path);
+    final result = await api.scanLeafBytes(bytes, cropType: _selectedCrop);
     if (mounted) {
       setState(() {
         _isAnalyzing = false;
@@ -82,10 +88,13 @@ class _ScanScreenState extends State<ScanScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      if (_imagePath != null)
+                      if (_imageBytes != null)
                         ClipRRect(
                           borderRadius: BorderRadius.circular(12),
-                          child: Image.file(File(_imagePath!), height: 160, fit: BoxFit.cover),
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxHeight: 180),
+                            child: Image.memory(_imageBytes!, fit: BoxFit.contain),
+                          ),
                         )
                       else ...[
                         Container(
@@ -106,6 +115,31 @@ class _ScanScreenState extends State<ScanScreen> {
                         style: Theme.of(context).textTheme.bodyMedium,
                         textAlign: TextAlign.center,
                       ),
+                      const SizedBox(height: 20),
+                      Text(
+                        'SELECT CROP',
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.grey.shade500, letterSpacing: 1.2),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        alignment: WrapAlignment.center,
+                        children: _supportedCrops.map((crop) {
+                          final selected = _selectedCrop == crop;
+                          return ChoiceChip(
+                            label: Text(crop),
+                            selected: selected,
+                            onSelected: (_) => setState(() => _selectedCrop = crop),
+                            selectedColor: Theme.of(context).primaryColor,
+                            labelStyle: TextStyle(
+                              color: selected ? Colors.white : Colors.black87,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                          );
+                        }).toList(),
+                      ),
                     ],
                   ),
                 ),
@@ -117,10 +151,13 @@ class _ScanScreenState extends State<ScanScreen> {
 
               if (_isAnalyzing) ...[
                 const Spacer(),
-                if (_imagePath != null)
+                if (_imageBytes != null)
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: Image.file(File(_imagePath!), height: 120, fit: BoxFit.cover),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 140),
+                      child: Image.memory(_imageBytes!, fit: BoxFit.contain),
+                    ),
                   ),
                 const SizedBox(height: 24),
                 Center(
@@ -143,10 +180,13 @@ class _ScanScreenState extends State<ScanScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const SizedBox(height: 16),
-                        if (_imagePath != null)
+                        if (_imageBytes != null)
                           ClipRRect(
                             borderRadius: BorderRadius.circular(12),
-                            child: Image.file(File(_imagePath!), height: 140, width: double.infinity, fit: BoxFit.cover),
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxHeight: 160),
+                              child: Image.memory(_imageBytes!, width: double.infinity, fit: BoxFit.contain),
+                            ),
                           ),
                         const SizedBox(height: 16),
                         Text('DIAGNOSIS REPORT', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.grey.shade500, letterSpacing: 1.5)),
@@ -160,14 +200,14 @@ class _ScanScreenState extends State<ScanScreen> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey.shade200)),
-                          child: Text(_result!['response'] ?? _result!['recommendation'] ?? 'No recommendation provided.', style: const TextStyle(fontSize: 13, height: 1.5)),
+                          child: SelectableText(_result!['response'] ?? _result!['recommendation'] ?? 'No recommendation provided.', style: const TextStyle(fontSize: 13, height: 1.5)),
                         ),
                       ],
                     ),
                   ),
                 ),
                 ElevatedButton(
-                  onPressed: () => setState(() { _result = null; _imagePath = null; }),
+                  onPressed: () => setState(() { _result = null; _imageBytes = null; }),
                   child: const Text('New Analysis'),
                 ),
               ],
@@ -207,7 +247,7 @@ class _ScanScreenState extends State<ScanScreen> {
         children: [
           Text(title.toUpperCase(), style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Colors.grey.shade400, letterSpacing: 1.0)),
           const SizedBox(height: 4),
-          Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF1C1E21))),
+          SelectableText(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF1C1E21))),
           const SizedBox(height: 12),
           const Divider(height: 1),
         ],

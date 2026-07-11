@@ -31,6 +31,7 @@ class OpenAIEmbeddings(EmbeddingProvider):
     def _get_client(self):
         if self._client is None:
             from openai import OpenAI
+
             self._client = OpenAI(api_key=self._api_key)
         return self._client
 

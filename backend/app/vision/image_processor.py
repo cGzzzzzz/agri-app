@@ -1,11 +1,11 @@
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
 from PIL import Image
 
-from app.vision.types import VisionFeatures, VisionInput
+from app.vision.types import VisionFeatures
 
 logger = logging.getLogger(__name__)
 

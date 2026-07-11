@@ -1,15 +1,15 @@
 from app.vision.xai.types import (
-    XAIReport,
-    Detection,
-    LesionRegion,
-    ColorProfile,
-    TextureFeatures,
-    FeatureAttribution,
-    RegionContribution,
-    ModelFeature,
-    UncertaintyEstimate,
-    SeverityExplanation,
     AgronomicInterpretation,
+    ColorProfile,
+    Detection,
+    FeatureAttribution,
+    LesionRegion,
+    ModelFeature,
+    RegionContribution,
+    SeverityExplanation,
+    TextureFeatures,
+    UncertaintyEstimate,
+    XAIReport,
 )
 
 __all__ = [

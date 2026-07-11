@@ -51,17 +51,20 @@ class CBAM(nn.Module):
 
 
 class DiseaseClassifier(nn.Module):
-    def __init__(self, num_classes: int, backbone: str = "efficientnet_b0", pretrained: bool = True):
+    def __init__(
+        self, num_classes: int, backbone: str = "efficientnet_b0", pretrained: bool = True
+    ):
         super().__init__()
         self.num_classes = num_classes
         self.backbone_name = backbone
 
         try:
             import timm
+
             self.backbone = timm.create_model(backbone, pretrained=pretrained, num_classes=0)
             backbone_features = self.backbone.num_features
-        except ImportError:
-            raise ImportError("timm is required. Install with: pip install timm")
+        except ImportError as err:
+            raise ImportError("timm is required. Install with: pip install timm") from err
 
         self.attention = CBAM(backbone_features)
         self.classifier = nn.Sequential(
@@ -90,13 +93,15 @@ class DiseaseClassifier(nn.Module):
             logits, _ = self.forward(x)
             probs = F.softmax(logits, dim=1)
             confidence, predicted = torch.max(probs, dim=1)
-            class_probs = {
-                name: float(probs[0, i]) for i, name in enumerate(self._class_names)
-            } if hasattr(self, "_class_names") else {
-                f"class_{i}": float(probs[0, i]) for i in range(self.num_classes)
-            }
+            class_probs = (
+                {name: float(probs[0, i]) for i, name in enumerate(self._class_names)}
+                if hasattr(self, "_class_names")
+                else {f"class_{i}": float(probs[0, i]) for i in range(self.num_classes)}
+            )
         return (
-            self._class_names[predicted.item()] if hasattr(self, "_class_names") else f"class_{predicted.item()}",
+            self._class_names[predicted.item()]
+            if hasattr(self, "_class_names")
+            else f"class_{predicted.item()}",
             confidence.item(),
             class_probs,
         )
@@ -109,7 +114,9 @@ class DiseaseClassifier(nn.Module):
                 features = features.unsqueeze(-1).unsqueeze(-1)
             attended = self.attention(features)
         spatial_map = attended.mean(dim=1, keepdim=True)
-        spatial_map = F.interpolate(spatial_map, size=(224, 224), mode="bilinear", align_corners=False)
+        spatial_map = F.interpolate(
+            spatial_map, size=(224, 224), mode="bilinear", align_corners=False
+        )
         spatial_map = spatial_map - spatial_map.min()
         spatial_map = spatial_map / (spatial_map.max() + 1e-8)
         return spatial_map.squeeze()

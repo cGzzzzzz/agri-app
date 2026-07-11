@@ -3,13 +3,12 @@ import logging
 import numpy as np
 import torch
 
-from app.vision.xai.types import XAIReport, Detection, FeatureAttribution, ModelFeature
-from app.vision.xai.gradcam import RealGradCAM, GradCAMFromAttention
-from app.vision.xai.feature_attribution import FeatureAttributor
-from app.vision.xai.uncertainty import UncertaintyEstimator
 from app.vision.xai.concept_bridge import interpret_disease, map_features_to_agronomy
-from app.vision.xai.lesion_analyzer import LesionAnalyzer
+from app.vision.xai.feature_attribution import FeatureAttributor
+from app.vision.xai.gradcam import GradCAMFromAttention, RealGradCAM
 from app.vision.xai.heatmap_renderer import HeatmapRenderer
+from app.vision.xai.lesion_analyzer import LesionAnalyzer
+from app.vision.xai.types import Detection, FeatureAttribution, XAIReport
 
 logger = logging.getLogger(__name__)
 
@@ -74,8 +73,12 @@ class XAIReportBuilder:
             detections, image_area, severity_score, severity_label
         )
 
-        feature_names = [f.feature_name for f in report.feature_attribution.top_contributing_regions]
-        feature_strengths = [f.contribution_score for f in report.feature_attribution.top_contributing_regions]
+        feature_names = [
+            f.feature_name for f in report.feature_attribution.top_contributing_regions
+        ]
+        feature_strengths = [
+            f.contribution_score for f in report.feature_attribution.top_contributing_regions
+        ]
         report.model_features = map_features_to_agronomy(feature_names, feature_strengths)
 
         report.agronomic = interpret_disease(disease_name, severity_label, weather)
@@ -83,6 +86,7 @@ class XAIReportBuilder:
         if self.model is not None:
             try:
                 from app.vision.xai.uncertainty import UncertaintyEstimator
+
                 estimator = UncertaintyEstimator(self.model, self.mc_samples)
                 report.uncertainty = estimator.estimate(input_tensor)
             except Exception:
@@ -98,8 +102,11 @@ class XAIReportBuilder:
             heatmap = gradcam.generate(input_tensor)
             gradcam.remove_hooks()
             if heatmap is not None and heatmap.any():
+                import base64
+                import io
+
                 from PIL import Image
-                import io, base64
+
                 heatmap_uint8 = (heatmap * 255).astype(np.uint8)
                 heatmap_colored = cv2.applyColorMap(heatmap_uint8, cv2.COLORMAP_JET)
                 heatmap_colored = cv2.cvtColor(heatmap_colored, cv2.COLOR_BGR2RGB)
@@ -118,10 +125,14 @@ class XAIReportBuilder:
             attn_gen = GradCAMFromAttention(self.model)
             attn = attn_gen.generate(input_tensor)
             if attn is not None:
+                import base64
+                import io
+
                 from PIL import Image
-                import io, base64
+
                 attn_uint8 = (np.clip(attn, 0, 1) * 255).astype(np.uint8)
                 import cv2
+
                 attn_colored = cv2.applyColorMap(attn_uint8, cv2.COLORMAP_VIRIDIS)
                 attn_colored = cv2.cvtColor(attn_colored, cv2.COLOR_BGR2RGB)
                 img = Image.fromarray(attn_colored)

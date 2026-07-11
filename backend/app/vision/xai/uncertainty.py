@@ -78,11 +78,14 @@ class UncertaintyEstimator:
             max_entropy = math.log(probs.shape[1])
             normalized_entropy = entropy / max_entropy if max_entropy > 0 else 0.0
 
-        warning = None
+        warning = (
+            "Uncertainty estimation degraded — MC Dropout failed, "
+            "epistemic uncertainty is not measured. "
+        )
         if confidence < 0.5:
-            warning = "Low confidence — the model is uncertain about this classification."
+            warning += "Low confidence — the model is uncertain about this classification."
         elif confidence < 0.7:
-            warning = "Moderate confidence — consider verifying with another image."
+            warning += "Moderate confidence — consider verifying with another image."
 
         return UncertaintyEstimate(
             aleatoric=float(normalized_entropy * 0.5),

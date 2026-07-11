@@ -1,0 +1,18 @@
+line-length = 100
+target-version = "py311"
+
+[lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "A", "SIM"]
+ignore = [
+    "E501",    # line length (handled by formatter)
+    "B008",    # FastAPI Depends() in default args
+    "F821",    # undefined-name (dynamic imports, SQL models)
+    "N806",    # non-lowercase-variable (ML: X, y)
+    "N812",    # lowercase-imported-as-non-lowercase
+    "N803",    # invalid-argument-name
+    "A002",    # builtin-argument-shadowing
+    "E402",    # module-import-not-at-top
+]
+
+[format]
+quote-style = "double"

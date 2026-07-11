@@ -1,6 +1,7 @@
 import logging
 import time
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -16,20 +17,24 @@ class PipelineStage:
         try:
             result = self.fn(state)
             elapsed = time.monotonic() - start
-            trace.append({
-                "step": self.name,
-                "status": "completed",
-                "duration_ms": round(elapsed * 1000, 2),
-            })
+            trace.append(
+                {
+                    "step": self.name,
+                    "status": "completed",
+                    "duration_ms": round(elapsed * 1000, 2),
+                }
+            )
             return result
         except Exception as e:
             elapsed = time.monotonic() - start
-            trace.append({
-                "step": self.name,
-                "status": "failed",
-                "error": str(e),
-                "duration_ms": round(elapsed * 1000, 2),
-            })
+            trace.append(
+                {
+                    "step": self.name,
+                    "status": "failed",
+                    "error": str(e),
+                    "duration_ms": round(elapsed * 1000, 2),
+                }
+            )
             logger.error("Pipeline stage '%s' failed: %s", self.name, e, exc_info=True)
             if self.required:
                 raise
@@ -51,11 +56,13 @@ class Pipeline:
                 state[stage.name] = result
 
         total_elapsed = time.monotonic() - total_start
-        trace.append({
-            "step": "pipeline_total",
-            "status": "completed",
-            "duration_ms": round(total_elapsed * 1000, 2),
-            "stages_executed": len([t for t in trace if t.get("step") != "pipeline_total"]),
-        })
+        trace.append(
+            {
+                "step": "pipeline_total",
+                "status": "completed",
+                "duration_ms": round(total_elapsed * 1000, 2),
+                "stages_executed": len([t for t in trace if t.get("step") != "pipeline_total"]),
+            }
+        )
 
         return state, trace

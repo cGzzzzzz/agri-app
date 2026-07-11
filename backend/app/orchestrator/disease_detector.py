@@ -3,8 +3,8 @@ from pathlib import Path
 
 import numpy as np
 
+from app.models_ml.errors import ModelUnavailableError
 from app.orchestrator.input_types import CropPrediction, DiseasePrediction, SeverityEstimation
-from app.vision.baselines import ExplainableDiseasePredictor, ExplainableSeverityPredictor
 
 logger = logging.getLogger(__name__)
 
@@ -63,105 +63,75 @@ def get_or_run_hybrid(state: dict, image_path: str, crop_label: str):
 
 
 class DiseaseDetector:
-    def __init__(self):
-        self.baseline = ExplainableDiseasePredictor()
-
     def detect(self, state: dict) -> DiseasePrediction:
         crop: CropPrediction = state["crop_resolution"]
-        processed = state.get("image_preprocessing")
         image_path = Path(state["input"].image_path)
 
-        hybrid_result = get_or_run_hybrid(state, str(image_path), crop.label)
-
-        if hybrid_result is not None and hybrid_result.disease_prediction:
-            evidence = [
-                f"Hybrid pipeline prediction: {hybrid_result.disease_prediction} "
-                f"({hybrid_result.disease_confidence:.2%})",
-                f"Crop context: {crop.label}",
-                f"Lesions detected: {hybrid_result.lesion_count}",
-                f"Lesion area ratio: {hybrid_result.lesion_area_ratio:.2%}",
-            ]
-            if hybrid_result.disease_probabilities:
-                top_3 = sorted(
-                    hybrid_result.disease_probabilities.items(),
-                    key=lambda x: x[1], reverse=True,
-                )[:3]
-                evidence.append(
-                    f"Top predictions: {', '.join(f'{k}: {v:.2%}' for k, v in top_3)}"
-                )
-
-            rules_fired = ["hybrid_pipeline:disease_classification"]
-            if hybrid_result.detections:
-                rules_fired.append(f"yolo_detections:{len(hybrid_result.detections)}")
-
+        if crop.status != "available":
             return DiseasePrediction(
-                label=hybrid_result.disease_prediction,
-                confidence=hybrid_result.disease_confidence,
-                evidence=evidence,
-                rules_fired=rules_fired,
-                heatmap_hint="Focus on spot margins, chlorotic halos, lesion clustering, and necrotic leaf areas.",
-                model_name="hybrid-vision-pipeline",
+                label="model_unavailable",
+                confidence=0.0,
+                evidence=[
+                    "Disease detection requires a resolved crop or a trained crop classifier."
+                ],
+                rules_fired=["orchestrator:crop_resolution_unavailable"],
+                heatmap_hint=None,
+                model_name="",
+                status="unavailable",
+                unavailable_reason=crop.unavailable_reason,
             )
 
         try:
             from app.models_ml.disease.registry import DiseaseModelRegistry
 
             onnx_pred = DiseaseModelRegistry.predict(crop.label, image_path)
-            if onnx_pred is not None:
-                return DiseasePrediction.from_xai(onnx_pred)
-        except Exception:
-            pass
-
-        xai_pred = self.baseline.predict(crop.label, image_path)
-        return DiseasePrediction.from_xai(xai_pred)
+            if onnx_pred is None:
+                raise ModelUnavailableError("disease_classification", crop.label)
+            return DiseasePrediction.from_xai(onnx_pred)
+        except Exception as exc:
+            logger.exception("Disease prediction unavailable for crop=%s", crop.label)
+            return DiseasePrediction(
+                label="model_unavailable",
+                confidence=0.0,
+                evidence=[f"No usable trained disease model is available for {crop.label}."],
+                rules_fired=["model_registry:disease_model_unavailable"],
+                heatmap_hint=None,
+                model_name="",
+                status="unavailable",
+                unavailable_reason=str(exc),
+            )
 
 
 class SeverityEstimatorStage:
-    def __init__(self):
-        self.baseline = ExplainableSeverityPredictor()
-
     def estimate(self, state: dict) -> SeverityEstimation:
         crop: CropPrediction = state["crop_resolution"]
         disease: DiseasePrediction = state["disease_detection"]
-        processed = state.get("image_preprocessing")
         image_path = Path(state["input"].image_path)
 
-        hybrid_result = get_or_run_hybrid(state, str(image_path), crop.label)
-
-        if hybrid_result is not None and hybrid_result.severity_label:
-            evidence = [
-                f"Hybrid pipeline severity: {hybrid_result.severity_label} "
-                f"(score: {hybrid_result.severity_score:.2%})",
-                f"Crop context: {crop.label}, Disease context: {disease.label}",
-                f"Lesion area ratio: {hybrid_result.lesion_area_ratio:.2%}",
-                f"Lesion count: {hybrid_result.lesion_count}",
-            ]
-            if hybrid_result.severity_probabilities:
-                probs_str = ", ".join(
-                    f"{k}: {v:.2%}" for k, v in hybrid_result.severity_probabilities.items()
-                )
-                evidence.append(f"Severity probabilities: {probs_str}")
-
-            rules_fired = ["hybrid_pipeline:severity_estimation"]
-            if hybrid_result.attention_map is not None:
-                rules_fired.append("xai:attention_map_generated")
-
+        if disease.status != "available":
             return SeverityEstimation(
-                label=hybrid_result.severity_label,
-                score=hybrid_result.severity_score,
-                evidence=evidence,
-                rules_fired=rules_fired,
-                model_name="hybrid-vision-pipeline",
+                label="model_unavailable",
+                score=0.0,
+                evidence=["Severity cannot be estimated without a disease prediction."],
+                rules_fired=["orchestrator:disease_detection_unavailable"],
+                model_name="",
+                status="unavailable",
+                unavailable_reason=disease.unavailable_reason,
             )
-
         try:
             from app.models_ml.severity.estimator import ONNXSeverityEstimator
 
             estimator = ONNXSeverityEstimator()
             sev = estimator.predict(crop.label, disease.label, image_path)
             return SeverityEstimation.from_xai(sev)
-        except Exception:
-            pass
-
-        xai_sev = self.baseline.predict(crop.label, disease.label, image_path)
-        return SeverityEstimation.from_xai(xai_sev)
+        except Exception as exc:
+            logger.exception("Severity prediction unavailable")
+            return SeverityEstimation(
+                label="model_unavailable",
+                score=0.0,
+                evidence=["No usable trained severity model is available."],
+                rules_fired=["model_registry:severity_model_unavailable"],
+                model_name="",
+                status="unavailable",
+                unavailable_reason=str(exc),
+            )

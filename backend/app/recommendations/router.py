@@ -9,14 +9,22 @@ from app.models import Recommendation, User
 from app.orchestrator.context_builder import ContextBuilder
 from app.repositories.history_repository import RecommendationRepository
 from app.schemas.common import ok
-from app.schemas.recommendation import RecommendationPayload, RecommendationRead, RecommendationRequest
+from app.schemas.recommendation import (
+    RecommendationPayload,
+    RecommendationRead,
+    RecommendationRequest,
+)
 from app.services.recommendation_engine import RecommendationEngine
 
 router = APIRouter(prefix="/recommendations", tags=["recommendations"])
 
 
 @router.post("")
-def generate(payload: RecommendationRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def generate(
+    payload: RecommendationRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     context = ContextBuilder(db).build(current_user, payload.farm_id, payload.crop_id)
     recommendation_payload = RecommendationEngine().generate(
         {"label": payload.crop},
@@ -46,4 +54,7 @@ def generate(payload: RecommendationRequest, db: Session = Depends(get_db), curr
 @router.get("/history")
 def history(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     records = RecommendationRepository(db).recent_for_user(current_user.id)
-    return ok([RecommendationRead.model_validate(record) for record in records], "Recommendation history loaded")
+    return ok(
+        [RecommendationRead.model_validate(record) for record in records],
+        "Recommendation history loaded",
+    )

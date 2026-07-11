@@ -30,7 +30,9 @@ class Retriever:
         results = self.vector_store.search(query_embedding, top_k=k)
         filtered = [r for r in results if r.score >= self.score_threshold]
 
-        logger.info("Retrieved %d documents for query (filtered from %d)", len(filtered), len(results))
+        logger.info(
+            "Retrieved %d documents for query (filtered from %d)", len(filtered), len(results)
+        )
         return filtered
 
     def retrieve_context(self, query: str, top_k: int | None = None) -> str:
@@ -40,9 +42,7 @@ class Retriever:
 
         context_parts = []
         for i, result in enumerate(results, 1):
-            context_parts.append(
-                f"[{i}] (score: {result.score:.2f}) {result.document.content}"
-            )
+            context_parts.append(f"[{i}] (score: {result.score:.2f}) {result.document.content}")
         return "\n\n".join(context_parts)
 
     def retrieve_for_recommendation(

@@ -3,6 +3,7 @@ from pathlib import Path
 
 import numpy as np
 
+from app.models_ml.errors import ModelInferenceError, ModelUnavailableError
 from app.vision.types import XAIPrediction
 
 logger = logging.getLogger(__name__)
@@ -11,7 +12,9 @@ logger = logging.getLogger(__name__)
 class ONNXCropClassifier:
     model_name = "crop-onnx-classifier"
 
-    def __init__(self, session=None, class_names: list[str] | None = None, input_name: str | None = None):
+    def __init__(
+        self, session=None, class_names: list[str] | None = None, input_name: str | None = None
+    ):
         self.session = session
         self.class_names = class_names or ["Rice", "Tomato", "Wheat", "Maize", "Cotton"]
         self.input_name = input_name
@@ -20,7 +23,7 @@ class ONNXCropClassifier:
 
     def predict(self, image: Path) -> XAIPrediction:
         if self.session is None:
-            return self._fallback(image)
+            raise ModelUnavailableError("crop_classification")
 
         try:
             tensor = self._preprocess(image)
@@ -50,9 +53,9 @@ class ONNXCropClassifier:
                 heatmap_hint="Crop region identified by neural network classifier.",
                 model_name=self.model_name,
             )
-        except Exception:
-            logger.warning("ONNX crop inference failed, falling back to baseline", exc_info=True)
-            return self._fallback(image)
+        except Exception as exc:
+            logger.exception("ONNX crop inference failed")
+            raise ModelInferenceError(self.model_name, str(exc)) from exc
 
     def _preprocess(self, image_path: Path) -> np.ndarray:
         from PIL import Image
@@ -69,7 +72,3 @@ class ONNXCropClassifier:
     def _softmax(self, x: np.ndarray) -> np.ndarray:
         e_x = np.exp(x - np.max(x))
         return e_x / e_x.sum()
-
-    def _fallback(self, image: Path) -> XAIPrediction:
-        from app.vision.baselines import ExplainableCropPredictor
-        return ExplainableCropPredictor().predict(image)

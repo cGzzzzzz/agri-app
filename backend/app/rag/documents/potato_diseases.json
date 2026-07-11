@@ -1,0 +1,44 @@
+[
+  {
+    "crop": "Potato",
+    "disease": "Early Blight",
+    "type": "symptoms",
+    "content": "Potato Early Blight symptoms: Dark brown to black concentric ring-shaped spots (target-board pattern) on older leaves first. Spots enlarge and may cause leaf yellowing and defoliation. Stems and tubers may also develop dark sunken lesions."
+  },
+  {
+    "crop": "Potato",
+    "disease": "Early Blight",
+    "type": "treatment",
+    "content": "Early Blight treatment: Apply Chlorothalonil (75% WP) at 2g/L or Mancozeb (75% WP) at 2.5g/L as foliar spray. Copper-based fungicides (Bordeaux mixture) are also effective. Rotate sprays to prevent resistance. Remove heavily infected lower leaves."
+  },
+  {
+    "crop": "Potato",
+    "disease": "Early Blight",
+    "type": "prevention",
+    "content": "Early Blight prevention: Practice 3-year crop rotation with non-solanaceous crops. Ensure adequate plant spacing for air circulation. Avoid overhead irrigation. Maintain balanced nitrogen fertilization. Plant certified disease-free seed tubers. Mulch to reduce soil splash."
+  },
+  {
+    "crop": "Potato",
+    "disease": "Late Blight",
+    "type": "symptoms",
+    "content": "Potato Late Blight symptoms: Water-soaked pale green to dark brown lesions on leaves, often starting at leaf tips or margins. White fuzzy mold (sporangia) visible on leaf undersides in humid conditions. Stems turn dark brown and rot. Tubers develop reddish-brown dry rot beneath the skin."
+  },
+  {
+    "crop": "Potato",
+    "disease": "Late Blight",
+    "type": "treatment",
+    "content": "Late Blight treatment: Apply Metalaxyl (8% WS) seed treatment or Mefenoxam (48% SL) at 2.5ml/L as foliar spray. Cymoxanil + Mancozeb combination sprays are highly effective. Remove and destroy infected plants immediately to prevent spread. Avoid overhead watering during wet weather."
+  },
+  {
+    "crop": "Potato",
+    "disease": "Late Blight",
+    "type": "prevention",
+    "content": "Late Blight prevention: Use resistant varieties (e.g., Kufri Jyoti, Kufri Chandramukhi). Plant certified seed. Destroy all plant debris after harvest. Monitor weather forecasts for cool, wet conditions favorable to late blight. Preventive fungicide sprays during high-risk periods."
+  },
+  {
+    "crop": "Potato",
+    "disease": "Healthy",
+    "type": "prevention",
+    "content": "Healthy potato crop: Maintain proper plant nutrition with balanced NPK. Ensure consistent irrigation - avoid both drought stress and waterlogging. Monitor regularly for early signs of disease. Use integrated pest management (IPM) practices."
+  }
+]

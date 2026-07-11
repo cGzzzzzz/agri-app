@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     image_target_height: int = 224
     image_max_size_mb: float = 20.0
     device: str = "cpu"  # "cpu" | "cuda" | "mps"
-    yolo_model_size: str = "n"  # n=nano, s=small, m=medium
+    yolo_model_size: str = "n"  # yolo11n, yolo11s, yolo11m, yolo11l, yolo11x
     classification_backbone: str = "efficientnet_b0"
 
     # XAI
@@ -36,11 +36,13 @@ class Settings(BaseSettings):
     uncertainty_mc_samples: int = 10
 
     # LLM
-    llm_provider: str = "none"  # "none" | "openai" | "gemini"
+    llm_provider: str = "none"  # "none" | "openai" | "groq" | "gemini"
     openai_api_key: str = ""
     openai_model: str = "gpt-4o-mini"
+    groq_api_key: str = ""
+    groq_model: str = "llama-3.3-70b-versatile"
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-1.5-flash"
+    gemini_model: str = "gemini-2.5-flash"
 
     # Weather
     weather_provider: str = "local"  # "local" | "openmeteo"

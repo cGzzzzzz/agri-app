@@ -66,5 +66,9 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>AgriAI needs microphone access for voice input in the chat assistant.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>AgriAI uses speech recognition to convert your voice to text for the chat assistant.</string>
 </dict>
 </plist>

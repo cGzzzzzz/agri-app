@@ -18,7 +18,9 @@ class KnowledgeBase:
     ):
         self.vector_store = vector_store
         self.embedding_provider = embedding_provider
-        self.documents_dir = Path(documents_dir) if documents_dir else Path(__file__).parent / "documents"
+        self.documents_dir = (
+            Path(documents_dir) if documents_dir else Path(__file__).parent / "documents"
+        )
 
     def ingest_file(self, file_path: Path, metadata: dict | None = None) -> int:
         if not file_path.exists():
@@ -51,17 +53,19 @@ class KnowledgeBase:
                 doc_metadata.update(metadata)
 
             doc_id = str(uuid.uuid4())
-            documents.append(Document(
-                id=doc_id,
-                content=text,
-                metadata=doc_metadata,
-            ))
+            documents.append(
+                Document(
+                    id=doc_id,
+                    content=text,
+                    metadata=doc_metadata,
+                )
+            )
 
         if not documents:
             return 0
 
         embeddings = self.embedding_provider.embed_batch([d.content for d in documents])
-        for doc, embedding in zip(documents, embeddings):
+        for doc, embedding in zip(documents, embeddings, strict=False):
             doc.embedding = embedding
 
         self.vector_store.add(documents)
@@ -91,35 +95,43 @@ class KnowledgeBase:
         documents: list[Document] = []
 
         symptoms_text = f"Symptoms of {disease} in {crop}: " + "; ".join(symptoms)
-        documents.append(Document(
-            id=str(uuid.uuid4()),
-            content=symptoms_text,
-            metadata={"crop": crop, "disease": disease, "type": "symptoms"},
-        ))
+        documents.append(
+            Document(
+                id=str(uuid.uuid4()),
+                content=symptoms_text,
+                metadata={"crop": crop, "disease": disease, "type": "symptoms"},
+            )
+        )
 
         treatments_text = f"Treatment for {disease} in {crop}: " + "; ".join(treatments)
-        documents.append(Document(
-            id=str(uuid.uuid4()),
-            content=treatments_text,
-            metadata={"crop": crop, "disease": disease, "type": "treatment"},
-        ))
+        documents.append(
+            Document(
+                id=str(uuid.uuid4()),
+                content=treatments_text,
+                metadata={"crop": crop, "disease": disease, "type": "treatment"},
+            )
+        )
 
         prevention_text = f"Prevention of {disease} in {crop}: " + "; ".join(prevention)
-        documents.append(Document(
-            id=str(uuid.uuid4()),
-            content=prevention_text,
-            metadata={"crop": crop, "disease": disease, "type": "prevention"},
-        ))
+        documents.append(
+            Document(
+                id=str(uuid.uuid4()),
+                content=prevention_text,
+                metadata={"crop": crop, "disease": disease, "type": "prevention"},
+            )
+        )
 
         if severity_info:
-            documents.append(Document(
-                id=str(uuid.uuid4()),
-                content=f"Severity information for {disease} in {crop}: {severity_info}",
-                metadata={"crop": crop, "disease": disease, "type": "severity"},
-            ))
+            documents.append(
+                Document(
+                    id=str(uuid.uuid4()),
+                    content=f"Severity information for {disease} in {crop}: {severity_info}",
+                    metadata={"crop": crop, "disease": disease, "type": "severity"},
+                )
+            )
 
         embeddings = self.embedding_provider.embed_batch([d.content for d in documents])
-        for doc, embedding in zip(documents, embeddings):
+        for doc, embedding in zip(documents, embeddings, strict=False):
             doc.embedding = embedding
 
         self.vector_store.add(documents)

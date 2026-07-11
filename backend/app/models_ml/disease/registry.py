@@ -2,9 +2,10 @@ import logging
 from pathlib import Path
 
 from app.models_ml.disease.base import BaseDiseaseModel
+from app.models_ml.disease.pepper import PepperDiseaseModel
+from app.models_ml.disease.potato import PotatoDiseaseModel
 from app.models_ml.disease.rice import RiceDiseaseModel
 from app.models_ml.disease.tomato import TomatoDiseaseModel
-from app.models_ml.disease.banana import BananaDiseaseModel
 from app.vision.types import XAIPrediction
 
 logger = logging.getLogger(__name__)
@@ -14,7 +15,8 @@ class DiseaseModelRegistry:
     _crop_models: dict[str, type[BaseDiseaseModel]] = {
         "rice": RiceDiseaseModel,
         "tomato": TomatoDiseaseModel,
-        "banana": BananaDiseaseModel,
+        "potato": PotatoDiseaseModel,
+        "pepper": PepperDiseaseModel,
     }
 
     @classmethod
@@ -29,11 +31,7 @@ class DiseaseModelRegistry:
         model = cls.get_model(crop)
         if model is None:
             return None
-        try:
-            return model.predict(image)
-        except Exception:
-            logger.warning("Disease model failed for crop=%s", crop, exc_info=True)
-            return None
+        return model.predict(image)
 
     @classmethod
     def supported_crops(cls) -> list[str]:

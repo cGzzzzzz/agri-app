@@ -1,0 +1,69 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Flutter
+frontend/.dart_tool/
+frontend/.packages
+frontend/build/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+frontend/pubspec.lock
+
+# Test / Coverage
+htmlcov/
+.coverage
+.coverage.*
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Model artifacts
+backend/app/ml/models/trained/*.pt
+backend/app/ml/models/trained/*.pth
+backend/app/ml/models/trained/*.onnx
+backend/app/ml/checkpoints/
+
+# API keys
+apikey.txt
+
+# Temp
+*.tmp
+*.bak
+
+# Training data (too large for git)
+backend/data/
+backend/artifacts/
+backend/checkpoints/
+backend/runs/
+backend/outputs/
+backend/wandb/
+*.db
+*.sqlite
+*.sqlite3

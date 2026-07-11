@@ -206,14 +206,16 @@ class ModelRegistry:
     def all_model_cards(self) -> list[dict]:
         cards = []
         for meta in self._metadata.values():
-            cards.append({
-                "name": meta.name,
-                "task": meta.task,
-                "version": meta.version,
-                "crop": meta.crop,
-                "framework": meta.framework,
-                "classes": meta.classes,
-                "status": "trained",
-                "metrics": meta.metrics,
-            })
+            cards.append(
+                {
+                    "name": meta.name,
+                    "task": meta.task,
+                    "version": meta.version,
+                    "crop": meta.crop,
+                    "framework": meta.framework,
+                    "classes": meta.classes,
+                    "status": "trained",
+                    "metrics": meta.metrics,
+                }
+            )
         return cards

@@ -13,7 +13,7 @@ class ImagePreprocessor:
         warnings: list[str] = []
 
         if extension not in self.allowed_extensions:
-            warnings.append("Unsupported extension for trained model path; baseline still runs.")
+            warnings.append("Unsupported extension for the trained model path.")
         if size_bytes == 0:
             warnings.append("Image file is empty or unavailable.")
         elif size_bytes < 128:

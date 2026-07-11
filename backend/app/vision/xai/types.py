@@ -231,7 +231,9 @@ class XAIReport:
                 "leaf_area_affected": f"{self.severity.affected_leaf_percentage:.0%}",
             },
             "explanation": {
-                "what_model_saw": self.agronomic.key_visual_indicators[:3] if self.agronomic.key_visual_indicators else [],
+                "what_model_saw": self.agronomic.key_visual_indicators[:3]
+                if self.agronomic.key_visual_indicators
+                else [],
                 "confidence_detail": self.class_probabilities,
                 "reliability": self.uncertainty.warning or "High — well-calibrated prediction",
             },

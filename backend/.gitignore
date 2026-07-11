@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+
+# Test / Coverage
+htmlcov/
+.coverage
+.pytest_cache/
+.mypy_cache/
+
+# Model artifacts (large, tracked via DVC or downloaded in CI)
+app/ml/models/trained/*.pt
+app/ml/models/trained/*.pth
+app/ml/checkpoints/
+
+# Env
+.env
+
+# Temp
+*.tmp

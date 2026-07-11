@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from app.models import Crop, Farm, Prediction, User
+from app.models import Crop, Farm, User
 from app.orchestrator.input_types import OrchestratorContext
 from app.repositories.history_repository import PredictionRepository
 from app.weather.service import WeatherService
@@ -11,7 +11,9 @@ class ContextBuilder:
         self.db = db
         self.weather = WeatherService()
 
-    def build(self, user: User, farm_id: int | None = None, crop_id: int | None = None) -> OrchestratorContext:
+    def build(
+        self, user: User, farm_id: int | None = None, crop_id: int | None = None
+    ) -> OrchestratorContext:
         farm = self._farm(user.id, farm_id)
         crop = self._crop(crop_id) if crop_id else self._latest_crop(farm.id if farm else None)
         location = self._location(farm)
@@ -31,7 +33,12 @@ class ContextBuilder:
         if farm_id is not None:
             farm = self.db.get(Farm, farm_id)
             return farm if farm and farm.user_id == user_id else None
-        return self.db.query(Farm).filter(Farm.user_id == user_id).order_by(Farm.created_at.desc()).first()
+        return (
+            self.db.query(Farm)
+            .filter(Farm.user_id == user_id)
+            .order_by(Farm.created_at.desc())
+            .first()
+        )
 
     def _crop(self, crop_id: int) -> Crop | None:
         return self.db.get(Crop, crop_id)
@@ -39,7 +46,12 @@ class ContextBuilder:
     def _latest_crop(self, farm_id: int | None) -> Crop | None:
         if farm_id is None:
             return None
-        return self.db.query(Crop).filter(Crop.farm_id == farm_id).order_by(Crop.created_at.desc()).first()
+        return (
+            self.db.query(Crop)
+            .filter(Crop.farm_id == farm_id)
+            .order_by(Crop.created_at.desc())
+            .first()
+        )
 
     def _history(self, user_id: int, farm_id: int | None) -> list[dict]:
         predictions = PredictionRepository(self.db).recent_for_farm(farm_id, user_id, 10)

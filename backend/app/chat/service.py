@@ -22,12 +22,20 @@ class ChatService:
             return self._llm
         try:
             from app.llm.provider import get_llm_provider
+
             self._llm = get_llm_provider()
             return self._llm
         except Exception:
             return None
 
-    def send(self, user: User, message: str, farm_id: int | None = None, crop_id: int | None = None, input_type: str = "text"):
+    def send(
+        self,
+        user: User,
+        message: str,
+        farm_id: int | None = None,
+        crop_id: int | None = None,
+        input_type: str = "text",
+    ):
         context = self.context_builder.build(user, farm_id, crop_id)
 
         response = self._generate_response(user, message, context)
@@ -51,41 +59,42 @@ class ChatService:
 
         if llm and llm.is_available:
             try:
-                return self._generate_with_llm(llm, message, context)
+                return self._generate_with_llm(llm, user, message, context)
             except Exception:
-                logger.warning("LLM chat generation failed, falling back to rule-based", exc_info=True)
+                logger.warning(
+                    "LLM chat generation failed, falling back to rule-based", exc_info=True
+                )
 
         return self._generate_rule_based(message, context)
 
-    def _generate_with_llm(self, llm, message: str, context) -> str:
-        from app.llm.prompts import CHAT_SYSTEM, CHAT_USER_WITH_CONTEXT
+    def _generate_with_llm(self, llm, user: User, message: str, context) -> str:
+        from app.chat.context_manager import ChatContextManager
+        from app.llm.prompts import CHAT_SYSTEM
 
-        crop_data = context.crop if hasattr(context, 'crop') else context.get("crop")
-        crop_name = crop_data.get("crop_type", "unknown") if crop_data else "unknown"
-
-        location = context.location if hasattr(context, 'location') else context.get("location", "unknown")
-        weather = context.weather if hasattr(context, 'weather') else context.get("weather", {})
-        history = context.history if hasattr(context, 'history') else context.get("history", [])
-
-        weather_str = f"{weather.get('condition', 'N/A')}, {weather.get('temperature_c', 'N/A')}C, {weather.get('humidity_percent', 'N/A')}% humidity" if isinstance(weather, dict) else str(weather)
-        history_str = "\n".join(
-            f"- {h.get('crop', '')}: {h.get('disease', '')} ({h.get('severity', '')})"
-            for h in history[:5]
-        ) if history else "No recent history"
-
-        user_prompt = CHAT_USER_WITH_CONTEXT.format(
-            question=message,
-            crop=crop_name,
-            location=location or "unknown",
-            weather_condition=weather.get("condition", "N/A") if isinstance(weather, dict) else "N/A",
-            temperature=weather.get("temperature_c", "N/A") if isinstance(weather, dict) else "N/A",
-            humidity=weather.get("humidity_percent", "N/A") if isinstance(weather, dict) else "N/A",
-            recent_history=history_str,
+        ctx_mgr = ChatContextManager(self.db)
+        chat_ctx = ctx_mgr.build(
+            user_id=user.id,
+            system_prompt=CHAT_SYSTEM,
+            current_message=message,
+            context={
+                "crop": context.crop if hasattr(context, "crop") else context.get("crop"),
+                "location": context.location
+                if hasattr(context, "location")
+                else context.get("location"),
+                "weather": context.weather
+                if hasattr(context, "weather")
+                else context.get("weather"),
+                "history": context.history
+                if hasattr(context, "history")
+                else context.get("history"),
+            },
+            llm_provider=llm,
         )
 
         response = llm.complete(
             system_prompt=CHAT_SYSTEM,
-            user_prompt=user_prompt,
+            user_prompt=message,
+            messages=chat_ctx.messages,
             temperature=0.7,
             max_tokens=1024,
         )
@@ -96,30 +105,21 @@ class ChatService:
         return self._generate_rule_based(message, context)
 
     def _generate_rule_based(self, message: str, context) -> str:
-        crop_data = context.crop if hasattr(context, 'crop') else context.get("crop")
+        crop_data = context.crop if hasattr(context, "crop") else context.get("crop")
         crop_name = crop_data.get("crop_type", "your crop") if crop_data else "your crop"
-        weather = context.weather if hasattr(context, 'weather') else context.get("weather", {})
-        history = context.history if hasattr(context, 'history') else context.get("history", [])
+        weather = context.weather if hasattr(context, "weather") else context.get("weather", {})
 
         lower = message.lower()
-        disease = "possible nutrient stress"
-        severity = "low"
-        if any(term in lower for term in ["spot", "blast", "fungus", "disease", "yellow", "leaf"]):
-            disease = "suspected leaf disease"
-            severity = "moderate"
-        elif any(term in lower for term in ["pest", "insect", "bug", "worm"]):
-            disease = "suspected pest infestation"
-            severity = "moderate"
-
-        recommendation = self.engine.generate(
-            {"label": crop_name},
-            {"label": disease},
-            {"label": severity},
-            weather if isinstance(weather, dict) else {},
-            history if isinstance(history, list) else [],
-        )
+        if any(term in lower for term in ["weather", "rain", "temperature", "humidity"]):
+            if isinstance(weather, dict) and weather.get("status") == "available":
+                return (
+                    f"Current conditions for {weather.get('location') or 'the selected farm'}: "
+                    f"{weather.get('condition')}, {weather.get('temperature_c')}C, "
+                    f"humidity {weather.get('humidity_percent')}%. {weather.get('advisory', '')}"
+                )
+            return "Weather data is not currently available for the selected farm. Configure a provider or verify the farm location."
 
         return (
-            f"For {crop_name}, I see {disease}. {recommendation['action']} "
-            f"{recommendation['weather_constraints'][0] if recommendation.get('weather_constraints') else ''}"
+            f"I can use the recorded context for {crop_name}, but I cannot diagnose disease from text alone. "
+            "Upload a clear leaf image for the trained vision pipeline, or request agronomist review."
         )

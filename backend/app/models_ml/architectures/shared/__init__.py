@@ -1,6 +1,6 @@
-import torch
-import torch.nn as nn
 import numpy as np
+import torch
+import torch.nn as nn  # noqa: F401
 
 
 class ImageNetNormalize:
@@ -18,16 +18,20 @@ def get_train_transforms(img_size: int = 224):
         import albumentations as A
         from albumentations.pytorch import ToTensorV2
 
-        return A.Compose([
-            A.RandomResizedCrop(img_size, img_size, scale=(0.8, 1.0), p=0.5),
-            A.HorizontalFlip(p=0.5),
-            A.VerticalFlip(p=0.3),
-            A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=0.3),
-            A.HueSaturationValue(hue_shift_limit=10, sat_shift_limit=20, val_shift_limit=10, p=0.2),
-            A.GaussNoise(var_limit=(10.0, 50.0), p=0.1),
-            A.Normalize(mean=ImageNetNormalize.MEAN, std=ImageNetNormalize.STD),
-            ToTensorV2(),
-        ])
+        return A.Compose(
+            [
+                A.RandomResizedCrop(img_size, img_size, scale=(0.8, 1.0), p=0.5),
+                A.HorizontalFlip(p=0.5),
+                A.VerticalFlip(p=0.3),
+                A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=0.3),
+                A.HueSaturationValue(
+                    hue_shift_limit=10, sat_shift_limit=20, val_shift_limit=10, p=0.2
+                ),
+                A.GaussNoise(var_limit=(10.0, 50.0), p=0.1),
+                A.Normalize(mean=ImageNetNormalize.MEAN, std=ImageNetNormalize.STD),
+                ToTensorV2(),
+            ]
+        )
     except ImportError:
         return None
 
@@ -37,11 +41,13 @@ def get_val_transforms(img_size: int = 224):
         import albumentations as A
         from albumentations.pytorch import ToTensorV2
 
-        return A.Compose([
-            A.Resize(img_size, img_size),
-            A.Normalize(mean=ImageNetNormalize.MEAN, std=ImageNetNormalize.STD),
-            ToTensorV2(),
-        ])
+        return A.Compose(
+            [
+                A.Resize(img_size, img_size),
+                A.Normalize(mean=ImageNetNormalize.MEAN, std=ImageNetNormalize.STD),
+                ToTensorV2(),
+            ]
+        )
     except ImportError:
         return None
 

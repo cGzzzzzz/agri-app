@@ -1,0 +1,26 @@
+[
+  {
+    "crop": "Pepper",
+    "disease": "Bacterial Spot",
+    "type": "symptoms",
+    "content": "Pepper Bacterial Spot symptoms: Small, water-soaked circular spots on leaves that turn brown or dark with yellow halos. Spots may drop out creating shot-hole effect. Fruit lesions are raised, raised, water-soaked, and become corky. Severe infections cause leaf yellowing and defoliation."
+  },
+  {
+    "crop": "Pepper",
+    "disease": "Bacterial Spot",
+    "type": "treatment",
+    "content": "Bacterial Spot treatment: Apply Copper hydroxide (77% WP) at 2g/L or Bordeaux mixture. Streptomycin sulfate (500ppm) sprays can help. Remove infected plant debris. Avoid working with wet plants. Use drip irrigation instead of overhead sprinklers to reduce splash spread."
+  },
+  {
+    "crop": "Pepper",
+    "disease": "Bacterial Spot",
+    "type": "prevention",
+    "content": "Bacterial Spot prevention: Use certified disease-free seeds and transplants. Treat seeds with hot water (125°F/52°C for 25 minutes) before planting. Practice 2-3 year crop rotation with non-solanaceous crops. Avoid overhead irrigation. Maintain proper plant spacing. Use copper-based preventive sprays during wet weather."
+  },
+  {
+    "crop": "Pepper",
+    "disease": "Healthy",
+    "type": "prevention",
+    "content": "Healthy pepper crop: Ensure well-drained soil with pH 6.0-6.8. Maintain consistent irrigation with drip system. Use balanced fertilization with adequate calcium to prevent blossom end rot. Monitor regularly for pest and disease signs. Stake or cage plants for better air circulation."
+  }
+]

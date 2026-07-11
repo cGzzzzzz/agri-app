@@ -1,19 +1,27 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'dashboard/dashboard_screen.dart';
+
 import 'assistant/assistant_screen.dart';
+import 'dashboard/dashboard_screen.dart';
 import 'farm_screen.dart';
 import 'profile_screen.dart';
 import 'scan_screen.dart';
+import 'url_helper.dart';
 
 class MainNavigation extends StatefulWidget {
-  const MainNavigation({super.key});
+  final String initialTab;
+  const MainNavigation({super.key, this.initialTab = ''});
 
   @override
   State<MainNavigation> createState() => _MainNavigationState();
 }
 
 class _MainNavigationState extends State<MainNavigation> {
-  int _currentIndex = 0;
+  static const _tabNames = ['home', 'assistant', 'scan', 'farm', 'profile'];
+
+  late int _currentIndex;
+  bool _hashInitialized = false;
 
   final List<Widget> _screens = const [
     DashboardScreen(),
@@ -24,12 +32,38 @@ class _MainNavigationState extends State<MainNavigation> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    final earlyHash = widget.initialTab;
+    if (earlyHash.isNotEmpty && _tabNames.contains(earlyHash)) {
+      _currentIndex = _tabNames.indexOf(earlyHash);
+    } else {
+      _currentIndex = 0;
+    }
+    _hashInitialized = true;
+    listenHashChange(_onHashChanged);
+  }
+
+  void _onHashChanged(String hash) {
+    if (!mounted) return;
+    final index = _tabNames.indexOf(hash);
+    if (index >= 0 && index != _currentIndex) {
+      setState(() => _currentIndex = index);
+    }
+  }
+
+  void _switchTab(int index) {
+    setState(() => _currentIndex = index);
+    setUrlHash(_tabNames[index]);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: _screens[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
+        onTap: _switchTab,
         type: BottomNavigationBarType.fixed,
         selectedItemColor: Theme.of(context).primaryColor,
         unselectedItemColor: Colors.grey,

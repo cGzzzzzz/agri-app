@@ -7,7 +7,9 @@ from app.models_ml.architectures.classification.efficientnet_classifier import D
 class CropClassifier(nn.Module):
     CROP_CLASSES = ["Rice", "Tomato", "Wheat", "Maize", "Cotton", "Sugarcane", "Banana"]
 
-    def __init__(self, num_classes: int = 7, backbone: str = "efficientnet_b0", pretrained: bool = True):
+    def __init__(
+        self, num_classes: int = 7, backbone: str = "efficientnet_b0", pretrained: bool = True
+    ):
         super().__init__()
         self.classifier = DiseaseClassifier(num_classes, backbone, pretrained)
         self.classifier.set_class_names(self.CROP_CLASSES[:num_classes])

@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../../../models/user.dart';
 import '../../../services/api_service.dart';
 import '../../../services/auth_service.dart';
-import '../main_navigation.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -53,11 +52,6 @@ class _LoginScreenState extends State<LoginScreen> {
           refreshToken: tokens['refresh_token'],
           user: user,
         );
-        if (mounted) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const MainNavigation()),
-          );
-        }
       } else {
         setState(() => _error = 'Invalid email or password');
       }

@@ -5,7 +5,8 @@ import '../main_navigation.dart';
 import 'login_screen.dart';
 
 class AuthWrapper extends StatefulWidget {
-  const AuthWrapper({super.key});
+  final String initialTab;
+  const AuthWrapper({super.key, this.initialTab = ''});
 
   @override
   State<AuthWrapper> createState() => _AuthWrapperState();
@@ -32,7 +33,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
     }
 
     if (auth.isAuthenticated) {
-      return const MainNavigation();
+      return MainNavigation(initialTab: widget.initialTab);
     }
 
     return const LoginScreen();

@@ -4,6 +4,7 @@ from pathlib import Path
 
 import numpy as np
 
+from app.models_ml.errors import ModelInferenceError, ModelUnavailableError
 from app.vision.types import XAIPrediction
 
 logger = logging.getLogger(__name__)
@@ -26,7 +27,11 @@ class BaseDiseaseModel(ABC):
     def predict(self, image: Path) -> XAIPrediction:
         session = self._try_load_session()
         if session is None:
-            return self._baseline_fallback(image)
+            raise ModelUnavailableError(
+                "disease_classification",
+                self.crop,
+                f"Artifact or ONNX runtime is unavailable for {self.model_name}.",
+            )
 
         try:
             tensor = self._preprocess(image)
@@ -37,7 +42,11 @@ class BaseDiseaseModel(ABC):
             pred_idx = int(np.argmax(probs))
             confidence = float(probs[pred_idx])
 
-            label = self.class_names[pred_idx] if pred_idx < len(self.class_names) else self.class_names[0]
+            label = (
+                self.class_names[pred_idx]
+                if pred_idx < len(self.class_names)
+                else self.class_names[0]
+            )
 
             evidence = [
                 f"ONNX disease classifier ({self.crop}) prediction: {label} ({confidence:.2%})",
@@ -54,9 +63,9 @@ class BaseDiseaseModel(ABC):
                 heatmap_hint="Disease regions identified by neural network classifier.",
                 model_name=self.model_name,
             )
-        except Exception:
-            logger.warning("ONNX disease inference failed for %s, falling back", self.crop, exc_info=True)
-            return self._baseline_fallback(image)
+        except Exception as exc:
+            logger.exception("ONNX disease inference failed for %s", self.crop)
+            raise ModelInferenceError(self.model_name, str(exc)) from exc
 
     def _try_load_session(self):
         try:
@@ -86,7 +95,3 @@ class BaseDiseaseModel(ABC):
     def _softmax(self, x: np.ndarray) -> np.ndarray:
         e_x = np.exp(x - np.max(x))
         return e_x / e_x.sum()
-
-    def _baseline_fallback(self, image: Path) -> XAIPrediction:
-        from app.vision.baselines import ExplainableDiseasePredictor
-        return ExplainableDiseasePredictor().predict(self.crop, image)

@@ -4,63 +4,111 @@ DISEASE_KNOWLEDGE = {
     "Rice Blast": {
         "organism": "Magnaporthe oryzae",
         "stage_map": {"low": "early", "moderate": "established", "high": "severe"},
-        "spread_factors": ["High humidity", "Warm temperature", "Dense planting", "Excess nitrogen"],
-        "visual_indicators": ["Spindle-shaped lesions", "Gray centers with brown borders", "Lesion clustering on leaf tips"],
+        "spread_factors": [
+            "High humidity",
+            "Warm temperature",
+            "Dense planting",
+            "Excess nitrogen",
+        ],
+        "visual_indicators": [
+            "Spindle-shaped lesions",
+            "Gray centers with brown borders",
+            "Lesion clustering on leaf tips",
+        ],
         "differential": ["Brown Spot", "Bacterial Blight", "Sheath Blight"],
     },
     "Brown Spot": {
         "organism": "Bipolaris oryzae",
         "stage_map": {"low": "early", "moderate": "moderate", "high": "advanced"},
         "spread_factors": ["Nutrient-deficient soil", "Poor water management", "High humidity"],
-        "visual_indicators": ["Circular brown spots", "Yellow halo around lesions", "Spots on older leaves first"],
+        "visual_indicators": [
+            "Circular brown spots",
+            "Yellow halo around lesions",
+            "Spots on older leaves first",
+        ],
         "differential": ["Rice Blast", "Narrow Brown Leaf Spot"],
     },
     "Bacterial Blight": {
         "organism": "Xanthomonas oryzae pv. oryzae",
         "stage_map": {"low": "localized", "moderate": "spreading", "high": "systemic"},
         "spread_factors": ["Flooding/heavy rain", "Wounds from wind/insects", "High temperature"],
-        "visual_indicators": ["Water-soaked lesions on leaf edges", "Yellow-white stripes along veins", "Bacterial ooze droplets"],
+        "visual_indicators": [
+            "Water-soaked lesions on leaf edges",
+            "Yellow-white stripes along veins",
+            "Bacterial ooze droplets",
+        ],
         "differential": ["Rice Blast", "Leaf Streak"],
     },
     "Sheath Blight": {
         "organism": "Rhizoctonia solani",
         "stage_map": {"low": "initial", "moderate": "spreading", "high": "severe"},
         "spread_factors": ["High humidity", "Dense canopy", "Excess nitrogen", "Standing water"],
-        "visual_indicators": ["Irregular lesions on leaf sheath", "Green-gray spots", "Lesion spreading upward"],
+        "visual_indicators": [
+            "Irregular lesions on leaf sheath",
+            "Green-gray spots",
+            "Lesion spreading upward",
+        ],
         "differential": ["Bacterial Panicle Blight"],
     },
     "Early Blight": {
         "organism": "Alternaria solani",
         "stage_map": {"low": "early", "moderate": "moderate", "high": "severe"},
         "spread_factors": ["Warm humid weather", "Rain splash", "Older leaves first"],
-        "visual_indicators": ["Concentric ring spots", "Dark brown to black lesions", "Yellowing around spots"],
+        "visual_indicators": [
+            "Concentric ring spots",
+            "Dark brown to black lesions",
+            "Yellowing around spots",
+        ],
         "differential": ["Late Blight", "Target Spot"],
     },
     "Late Blight": {
         "organism": "Phytophthora infestans",
         "stage_map": {"low": "initial", "moderate": "spreading", "high": "epidemic"},
         "spread_factors": ["Cool wet weather", "High humidity", "Rain events"],
-        "visual_indicators": ["Water-soaked dark lesions", "White fuzzy growth on undersides", "Rapid plant death"],
+        "visual_indicators": [
+            "Water-soaked dark lesions",
+            "White fuzzy growth on undersides",
+            "Rapid plant death",
+        ],
         "differential": ["Early Blight", "Septoria Leaf Spot"],
     },
     "Leaf Curl": {
         "organism": "Tomato Yellow Leaf Curl Virus (TYLCV)",
-        "stage_map": {"low": "initial infection", "moderate": "established", "high": "severe stunting"},
-        "spread_factors": ["Whitefly vector", "High temperatures", "New plantings near infected fields"],
-        "visual_indicators": ["Upward leaf curling", "Yellow leaf margins", "Stunted growth", "Flower drop"],
+        "stage_map": {
+            "low": "initial infection",
+            "moderate": "established",
+            "high": "severe stunting",
+        },
+        "spread_factors": [
+            "Whitefly vector",
+            "High temperatures",
+            "New plantings near infected fields",
+        ],
+        "visual_indicators": [
+            "Upward leaf curling",
+            "Yellow leaf margins",
+            "Stunted growth",
+            "Flower drop",
+        ],
         "differential": ["Herbicide damage", "Nutrient deficiency"],
     },
     "Healthy": {
         "organism": "N/A",
         "stage_map": {},
         "spread_factors": [],
-        "visual_indicators": ["Uniform green coloration", "No visible lesions", "Normal leaf architecture"],
+        "visual_indicators": [
+            "Uniform green coloration",
+            "No visible lesions",
+            "Normal leaf architecture",
+        ],
         "differential": [],
     },
 }
 
 
-def interpret_disease(disease_name: str, severity_label: str, weather: dict | None = None) -> AgronomicInterpretation:
+def interpret_disease(
+    disease_name: str, severity_label: str, weather: dict | None = None
+) -> AgronomicInterpretation:
     knowledge = DISEASE_KNOWLEDGE.get(disease_name, DISEASE_KNOWLEDGE.get("Healthy", {}))
 
     if not knowledge:
@@ -112,21 +160,25 @@ def map_features_to_agronomy(
     }
 
     features = []
-    for name, strength in zip(feature_names, activation_strengths):
+    for name, strength in zip(feature_names, activation_strengths, strict=False):
         agronomic = mapping.get(name, f"Model feature: {name}")
         spatial = _infer_spatial_location(name)
-        features.append(ModelFeature(
-            feature_name=name,
-            activation_strength=strength,
-            spatial_location=spatial,
-            agronomic_mapping=agronomic,
-        ))
+        features.append(
+            ModelFeature(
+                feature_name=name,
+                activation_strength=strength,
+                spatial_location=spatial,
+                agronomic_mapping=agronomic,
+            )
+        )
 
     return features
 
 
 def _assess_spread_risk(severity: str, weather: dict | None) -> str:
-    base_risk = {"low": "low", "moderate": "moderate", "high": "high", "none": "none"}.get(severity, "unknown")
+    base_risk = {"low": "low", "moderate": "moderate", "high": "high", "none": "none"}.get(
+        severity, "unknown"
+    )
     if weather:
         humidity = weather.get("humidity_percent", 50)
         rain_prob = weather.get("precipitation_probability_percent", 30)
@@ -140,7 +192,12 @@ def _assess_spread_risk(severity: str, weather: dict | None) -> str:
 def _assess_urgency(severity: str, disease: str) -> str:
     if disease.lower() == "healthy":
         return "none"
-    urgency_map = {"high": "immediate", "moderate": "within_48h", "low": "within_week", "none": "monitor"}
+    urgency_map = {
+        "high": "immediate",
+        "moderate": "within_48h",
+        "low": "within_week",
+        "none": "monitor",
+    }
     return urgency_map.get(severity, "unknown")
 
 

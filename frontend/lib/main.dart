@@ -5,8 +5,11 @@ import 'core/theme/app_theme.dart';
 import 'services/api_service.dart';
 import 'services/auth_service.dart';
 import 'ui/screens/auth/auth_wrapper.dart';
+import 'ui/screens/url_helper.dart';
 
 void main() {
+  final initialTab = getHashEarly();
+
   runApp(
     MultiProvider(
       providers: [
@@ -15,13 +18,14 @@ void main() {
           update: (_, auth, _) => ApiService(auth),
         ),
       ],
-      child: const AgriAIApp(),
+      child: AgriAIApp(initialTab: initialTab),
     ),
   );
 }
 
 class AgriAIApp extends StatelessWidget {
-  const AgriAIApp({super.key});
+  final String initialTab;
+  const AgriAIApp({super.key, this.initialTab = ''});
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +33,7 @@ class AgriAIApp extends StatelessWidget {
       title: 'AgriAI',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: const AuthWrapper(),
+      home: AuthWrapper(initialTab: initialTab),
     );
   }
 }

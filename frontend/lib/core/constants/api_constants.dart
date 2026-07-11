@@ -1,5 +1,3 @@
-const String apiBaseUrl = 'http://192.168.0.199:8000';
-
 const String apiPrefix = '/api/v1';
 
 class ApiEndpoints {
@@ -29,4 +27,6 @@ class ApiEndpoints {
 
   static const String weatherCurrent = '$apiPrefix/weather/current';
   static String weatherForecast(int days) => '$apiPrefix/weather/forecast?days=$days';
+
+  static const String sttTranscribe = '$apiPrefix/stt/transcribe';
 }

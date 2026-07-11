@@ -11,6 +11,9 @@ class PredictorOutput(BaseModel):
     evidence: list[str]
     rules_fired: list[str]
     heatmap_hint: str | None = None
+    model_name: str = ""
+    status: str = "available"
+    unavailable_reason: str | None = None
 
 
 class SeverityOutput(BaseModel):
@@ -18,6 +21,9 @@ class SeverityOutput(BaseModel):
     score: float
     evidence: list[str]
     rules_fired: list[str]
+    model_name: str = ""
+    status: str = "available"
+    unavailable_reason: str | None = None
 
 
 class XAIDetectionOutput(BaseModel):

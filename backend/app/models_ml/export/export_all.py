@@ -65,7 +65,9 @@ DEFAULT_CROPS = {
 
 def main():
     parser = argparse.ArgumentParser(description="Export all AgriAI models to ONNX")
-    parser.add_argument("--output-dir", type=str, default="artifacts", help="Output directory for ONNX artifacts")
+    parser.add_argument(
+        "--output-dir", type=str, default="artifacts", help="Output directory for ONNX artifacts"
+    )
     parser.add_argument("--version", type=str, default="1.0.0", help="Model version to export")
     parser.add_argument("--crops", nargs="*", help="Specific crops to export (default: all)")
     args = parser.parse_args()

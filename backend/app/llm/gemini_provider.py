@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 class GeminiProvider(LLMProvider):
-    def __init__(self, api_key: str, model: str = "gemini-1.5-flash"):
+    def __init__(self, api_key: str, model: str = "gemini-2.5-flash"):
         self._api_key = api_key
         self._model = model
         self._client = None
@@ -16,6 +16,7 @@ class GeminiProvider(LLMProvider):
         if self._client is None:
             try:
                 import google.generativeai as genai
+
                 genai.configure(api_key=self._api_key)
                 self._client = genai.GenerativeModel(self._model)
             except ImportError:
@@ -35,12 +36,26 @@ class GeminiProvider(LLMProvider):
         self,
         system_prompt: str,
         user_prompt: str,
+        messages: list[dict] | None = None,
         temperature: float = 0.7,
         max_tokens: int = 1024,
     ) -> str:
         try:
             client = self._get_client()
-            full_prompt = f"{system_prompt}\n\n{user_prompt}"
+            if messages:
+                parts = []
+                for msg in messages:
+                    role = msg.get("role", "user")
+                    content = msg.get("content", "")
+                    if role == "system":
+                        parts.append(f"[System] {content}")
+                    elif role == "assistant":
+                        parts.append(f"[Assistant] {content}")
+                    else:
+                        parts.append(content)
+                full_prompt = "\n\n".join(parts)
+            else:
+                full_prompt = f"{system_prompt}\n\n{user_prompt}"
             response = client.generate_content(
                 full_prompt,
                 generation_config={

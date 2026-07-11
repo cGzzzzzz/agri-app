@@ -45,6 +45,8 @@ class CropPrediction:
     rules_fired: list[str]
     source: str
     model_name: str
+    status: str = "available"
+    unavailable_reason: str | None = None
 
     @classmethod
     def from_xai(cls, pred: XAIPrediction, source: str = "model") -> "CropPrediction":
@@ -55,6 +57,8 @@ class CropPrediction:
             rules_fired=pred.rules_fired,
             source=source,
             model_name=pred.model_name,
+            status=getattr(pred, "status", "available"),
+            unavailable_reason=getattr(pred, "unavailable_reason", None),
         )
 
 
@@ -66,6 +70,8 @@ class DiseasePrediction:
     rules_fired: list[str]
     heatmap_hint: str | None
     model_name: str
+    status: str = "available"
+    unavailable_reason: str | None = None
 
     @classmethod
     def from_xai(cls, pred: XAIPrediction) -> "DiseasePrediction":
@@ -76,6 +82,8 @@ class DiseasePrediction:
             rules_fired=pred.rules_fired,
             heatmap_hint=pred.heatmap_hint,
             model_name=pred.model_name,
+            status=getattr(pred, "status", "available"),
+            unavailable_reason=getattr(pred, "unavailable_reason", None),
         )
 
 
@@ -86,6 +94,8 @@ class SeverityEstimation:
     evidence: list[str]
     rules_fired: list[str]
     model_name: str
+    status: str = "available"
+    unavailable_reason: str | None = None
 
     @classmethod
     def from_xai(cls, sev: XAISeverity) -> "SeverityEstimation":
@@ -95,6 +105,8 @@ class SeverityEstimation:
             evidence=sev.evidence,
             rules_fired=sev.rules_fired,
             model_name=sev.model_name,
+            status=getattr(sev, "status", "available"),
+            unavailable_reason=getattr(sev, "unavailable_reason", None),
         )
 
 

@@ -13,6 +13,7 @@ class LLMProvider(ABC):
         self,
         system_prompt: str,
         user_prompt: str,
+        messages: list[dict] | None = None,
         temperature: float = 0.7,
         max_tokens: int = 1024,
     ) -> str:
@@ -49,10 +50,24 @@ class NullLLMProvider(LLMProvider):
     def is_available(self) -> bool:
         return False
 
-    def complete(self, system_prompt: str, user_prompt: str, temperature: float = 0.7, max_tokens: int = 1024) -> str:
+    def complete(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        messages: list[dict] | None = None,
+        temperature: float = 0.7,
+        max_tokens: int = 1024,
+    ) -> str:
         return ""
 
-    def complete_structured(self, system_prompt: str, user_prompt: str, schema: dict, temperature: float = 0.3, max_tokens: int = 1024) -> dict:
+    def complete_structured(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        schema: dict,
+        temperature: float = 0.3,
+        max_tokens: int = 1024,
+    ) -> dict:
         return {}
 
 
@@ -64,6 +79,7 @@ def get_llm_provider() -> LLMProvider:
     if provider_name == "openai" and settings.openai_api_key:
         try:
             from app.llm.openai_provider import OpenAIProvider
+
             return OpenAIProvider(api_key=settings.openai_api_key, model=settings.openai_model)
         except Exception:
             logger.warning("Failed to initialize OpenAI provider", exc_info=True)
@@ -71,8 +87,17 @@ def get_llm_provider() -> LLMProvider:
     if provider_name == "gemini" and settings.gemini_api_key:
         try:
             from app.llm.gemini_provider import GeminiProvider
+
             return GeminiProvider(api_key=settings.gemini_api_key, model=settings.gemini_model)
         except Exception:
             logger.warning("Failed to initialize Gemini provider", exc_info=True)
+
+    if provider_name == "groq" and settings.groq_api_key:
+        try:
+            from app.llm.groq_provider import GroqProvider
+
+            return GroqProvider(api_key=settings.groq_api_key, model=settings.groq_model)
+        except Exception:
+            logger.warning("Failed to initialize Groq provider", exc_info=True)
 
     return NullLLMProvider()

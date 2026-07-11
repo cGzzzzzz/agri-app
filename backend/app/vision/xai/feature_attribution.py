@@ -88,14 +88,24 @@ class FeatureAttributor:
         input_tensor: torch.Tensor,
         class_idx: int | None = None,
     ) -> FeatureAttribution:
+        ig_map = None
         try:
             ig_map = self.integrated_gradients(input_tensor, class_idx)
         except Exception:
-            logger.warning("Integrated Gradients failed, falling back to SmoothGrad", exc_info=True)
+            logger.warning("Integrated Gradients failed, trying SmoothGrad", exc_info=True)
+
+        if ig_map is None:
             try:
                 ig_map = self.smooth_grad(input_tensor, class_idx)
             except Exception:
-                ig_map = np.zeros((224, 224))
+                logger.warning(
+                    "SmoothGrad also failed, feature attribution unavailable", exc_info=True
+                )
+
+        if ig_map is None:
+            raise RuntimeError(
+                "Feature attribution unavailable — both Integrated Gradients and SmoothGrad failed."
+            )
 
         regions = self._extract_top_regions(ig_map)
 
@@ -107,7 +117,9 @@ class FeatureAttributor:
             gradient_norm=gradient_norm,
         )
 
-    def _extract_top_regions(self, attr_map: np.ndarray, top_k: int = 5) -> list[RegionContribution]:
+    def _extract_top_regions(
+        self, attr_map: np.ndarray, top_k: int = 5
+    ) -> list[RegionContribution]:
         h, w = attr_map.shape
         regions = []
         region_size = h // 3
@@ -117,11 +129,13 @@ class FeatureAttributor:
                 x1, x2 = j * region_size, min((j + 1) * region_size, w)
                 score = float(attr_map[y1:y2, x1:x2].mean())
                 location = self._region_name(i, j)
-                regions.append(RegionContribution(
-                    region_description=location,
-                    contribution_score=score,
-                    feature_type="color" if score > 0.3 else "texture",
-                ))
+                regions.append(
+                    RegionContribution(
+                        region_description=location,
+                        contribution_score=score,
+                        feature_type="color" if score > 0.3 else "texture",
+                    )
+                )
         regions.sort(key=lambda r: r.contribution_score, reverse=True)
         return regions[:top_k]
 

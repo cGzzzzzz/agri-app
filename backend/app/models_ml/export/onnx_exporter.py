@@ -2,8 +2,6 @@ import json
 import logging
 from pathlib import Path
 
-import numpy as np
-
 logger = logging.getLogger(__name__)
 
 try:
@@ -30,29 +28,35 @@ class OnnxExporter:
         model_dir.mkdir(parents=True, exist_ok=True)
         onnx_path = model_dir / "model.onnx"
 
-        if torch is not None:
-            try:
-                from app.models_ml.architectures.classification.efficientnet_classifier import DiseaseClassifier
+        if torch is None:
+            raise RuntimeError("PyTorch is required to export a disease model.")
+        try:
+            from app.models_ml.architectures.classification.efficientnet_classifier import (
+                DiseaseClassifier,
+            )
 
-                model = DiseaseClassifier(num_classes=num_classes, backbone="efficientnet_b0", pretrained=False)
-                model.eval()
-                dummy = torch.randn(*input_shape)
-                torch.onnx.export(
-                    model,
-                    dummy,
-                    str(onnx_path),
-                    input_names=["image"],
-                    output_names=["logits", "features"],
-                    dynamic_axes={
-                        "image": {0: "batch_size"},
-                        "logits": {0: "batch_size"},
-                        "features": {0: "batch_size"},
-                    },
-                    opset_version=17,
-                )
-            except Exception:
-                logger.warning("ONNX export failed for %s, writing placeholder", crop, exc_info=True)
-                onnx_path.write_bytes(b"placeholder")
+            model = DiseaseClassifier(
+                num_classes=num_classes, backbone="efficientnet_b0", pretrained=False
+            )
+            model.eval()
+            dummy = torch.randn(*input_shape)
+            torch.onnx.export(
+                model,
+                dummy,
+                str(onnx_path),
+                input_names=["image"],
+                output_names=["logits", "features"],
+                dynamic_axes={
+                    "image": {0: "batch_size"},
+                    "logits": {0: "batch_size"},
+                    "features": {0: "batch_size"},
+                },
+                opset_version=17,
+                dynamo=False,
+            )
+        except Exception as exc:
+            logger.exception("ONNX export failed for %s", crop)
+            raise RuntimeError(f"ONNX export failed for {crop}") from exc
 
         self._write_metadata(
             model_dir,
@@ -77,29 +81,31 @@ class OnnxExporter:
         model_dir.mkdir(parents=True, exist_ok=True)
         onnx_path = model_dir / "model.onnx"
 
-        if torch is not None:
-            try:
-                from app.models_ml.architectures.severity.severity_model import SeverityModel
+        if torch is None:
+            raise RuntimeError("PyTorch is required to export a severity model.")
+        try:
+            from app.models_ml.architectures.severity.severity_model import SeverityModel
 
-                model = SeverityModel(backbone="efficientnet_b0", pretrained=False)
-                model.eval()
-                dummy = torch.randn(*input_shape)
-                torch.onnx.export(
-                    model,
-                    dummy,
-                    str(onnx_path),
-                    input_names=["image"],
-                    output_names=["severity_score", "severity_logits"],
-                    dynamic_axes={
-                        "image": {0: "batch_size"},
-                        "severity_score": {0: "batch_size"},
-                        "severity_logits": {0: "batch_size"},
-                    },
-                    opset_version=17,
-                )
-            except Exception:
-                logger.warning("ONNX export failed for severity model", exc_info=True)
-                onnx_path.write_bytes(b"placeholder")
+            model = SeverityModel(backbone="efficientnet_b0", pretrained=False)
+            model.eval()
+            dummy = torch.randn(*input_shape)
+            torch.onnx.export(
+                model,
+                dummy,
+                str(onnx_path),
+                input_names=["image"],
+                output_names=["severity_score", "severity_logits"],
+                dynamic_axes={
+                    "image": {0: "batch_size"},
+                    "severity_score": {0: "batch_size"},
+                    "severity_logits": {0: "batch_size"},
+                },
+                opset_version=17,
+                dynamo=False,
+            )
+        except Exception as exc:
+            logger.exception("ONNX export failed for severity model")
+            raise RuntimeError("ONNX export failed for severity_estimator") from exc
 
         self._write_metadata(
             model_dir,
@@ -136,7 +142,9 @@ class OnnxExporter:
             "artifact_path": str(model_dir / "model.onnx"),
             "description": f"{task} model for {crop}" if crop else f"{task} model",
             "metrics": {},
-            "created_at": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(),
+            "created_at": __import__("datetime")
+            .datetime.now(__import__("datetime").timezone.utc)
+            .isoformat(),
             "tags": [],
         }
         (model_dir / "metadata.json").write_text(json.dumps(metadata, indent=2), encoding="utf-8")

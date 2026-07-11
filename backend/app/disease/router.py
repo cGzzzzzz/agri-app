@@ -16,6 +16,7 @@ async def analyze_image(
     file: UploadFile = File(...),
     farm_id: int | None = Form(default=None),
     crop_id: int | None = Form(default=None),
+    crop: str | None = Form(default=None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -26,6 +27,7 @@ async def analyze_image(
         image.id,
         farm_id=farm_id,
         crop_id=crop_id,
+        crop_override=crop,
     )
     return ok(result, "Image analyzed")
 
@@ -42,11 +44,17 @@ def scan_history(
         .limit(50)
         .all()
     )
-    return ok([{
-        "id": p.id,
-        "disease": p.disease_name,
-        "confidence": p.disease_confidence,
-        "severity": p.severity_label,
-        "crop": p.crop_name,
-        "created_at": p.created_at.isoformat() if p.created_at else None,
-    } for p in predictions], "Scan history loaded")
+    return ok(
+        [
+            {
+                "id": p.id,
+                "disease": p.disease_name,
+                "confidence": p.disease_confidence,
+                "severity": p.severity_label,
+                "crop": p.crop_name,
+                "created_at": p.created_at.isoformat() if p.created_at else None,
+            }
+            for p in predictions
+        ],
+        "Scan history loaded",
+    )

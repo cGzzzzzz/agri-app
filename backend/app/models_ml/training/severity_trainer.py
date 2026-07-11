@@ -4,6 +4,7 @@ import time
 from pathlib import Path
 
 import numpy as np
+from tqdm import tqdm
 
 from app.models_ml.training.base_trainer import BaseTrainer, TrainConfig, TrainResult
 
@@ -13,30 +14,35 @@ try:
     import torch
     import torch.nn as nn
     import torch.optim as optim
-    from torch.utils.data import DataLoader
+    from torch.utils.data import DataLoader as TorchDataLoader
 except ImportError:
     torch = None
     nn = None
     optim = None
-    DataLoader = None
+    TorchDataLoader = None
 
 
 class SeverityTrainer(BaseTrainer):
     def __init__(self, model_name: str = "severity_estimator"):
         self.model_name = model_name
+        self.trained_model = None
 
     def _build_model(self):
         from app.models_ml.architectures.severity.severity_model import SeverityModel
 
         return SeverityModel(backbone="efficientnet_b0", pretrained=True)
 
-    def train(self, dataset, config: TrainConfig) -> TrainResult:
+    def train(
+        self, dataset, config: TrainConfig, val_dataset=None, output_dir=Path("artifacts")
+    ) -> TrainResult:
         self._validate_config(config)
-        export_dir = Path("artifacts") / self.model_name / "1.0.0"
+        export_dir = Path(output_dir) / self.model_name / "1.0.0"
         export_dir.mkdir(parents=True, exist_ok=True)
 
         if torch is None:
-            return self._train_fallback(dataset, config, export_dir)
+            raise RuntimeError(
+                "PyTorch is required to train a severity model. Install the training dependencies."
+            )
 
         model = self._build_model()
         device = torch.device(config.device)
@@ -44,24 +50,36 @@ class SeverityTrainer(BaseTrainer):
 
         regression_criterion = nn.MSELoss()
         classification_criterion = nn.CrossEntropyLoss()
-        optimizer = optim.Adam(model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay)
+        optimizer = optim.Adam(
+            model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay
+        )
         scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=config.epochs)
 
         train_loader = self._make_loader(dataset, config, shuffle=True)
-        val_loader = self._make_loader(dataset, config, shuffle=False)
+        if val_dataset is not None:
+            val_loader = self._make_loader(val_dataset, config, shuffle=False)
+        else:
+            val_loader = self._make_loader(dataset, config, shuffle=False)
 
         training_log = []
         best_val_mae = float("inf")
         best_state = None
         patience_counter = 0
 
-        for epoch in range(config.epochs):
+        epoch_bar = tqdm(range(config.epochs), desc="Severity [epochs]", position=0, leave=True)
+        for epoch in epoch_bar:
             model.train()
             train_loss = 0.0
             train_total = 0
 
             epoch_start = time.time()
-            for batch_images, batch_labels in train_loader:
+            batch_bar = tqdm(
+                train_loader,
+                desc=f"  Epoch {epoch + 1}/{config.epochs} [train]",
+                position=1,
+                leave=False,
+            )
+            for batch_images, batch_labels in batch_bar:
                 batch_images = batch_images.to(device)
                 batch_labels = batch_labels.to(device)
 
@@ -97,7 +115,12 @@ class SeverityTrainer(BaseTrainer):
             training_log.append(epoch_metrics)
             logger.info(
                 "Epoch %d/%d - train_loss=%.4f val_mae=%.4f val_rmse=%.4f (%.1fs)",
-                epoch + 1, config.epochs, train_loss, val_mae, val_rmse, epoch_time,
+                epoch + 1,
+                config.epochs,
+                train_loss,
+                val_mae,
+                val_rmse,
+                epoch_time,
             )
 
             if val_mae < best_val_mae:
@@ -113,17 +136,49 @@ class SeverityTrainer(BaseTrainer):
         if best_state is not None:
             model.load_state_dict(best_state)
 
+        self.trained_model = model
+
         export_path = self.export(export_dir / "model.onnx", model)
+
+        if hasattr(dataset, "dataset"):
+            num_samples = len(dataset.dataset)
+        elif hasattr(dataset, "__len__"):
+            num_samples = len(dataset)
+        else:
+            num_samples = 0
 
         metadata = {
             "model_name": self.model_name,
             "version": "1.0.0",
             "task": "severity",
-            "dataset.num_samples": getattr(dataset, "num_samples", 0),
+            "dataset.num_samples": num_samples,
             "training_epochs": len(training_log),
             "best_val_mae": round(best_val_mae, 4),
         }
-        (export_dir / "training_metadata.json").write_text(json.dumps(metadata, indent=2), encoding="utf-8")
+        (export_dir / "training_metadata.json").write_text(
+            json.dumps(metadata, indent=2), encoding="utf-8"
+        )
+
+        registry_metadata = {
+            "name": self.model_name,
+            "version": "1.0.0",
+            "crop": "",
+            "framework": "onnx",
+            "task": "severity_estimation",
+            "classes": ["none", "low", "moderate", "high"],
+            "input_shape": [1, 3, 224, 224],
+            "preprocessing": "imagenet_normalize",
+            "artifact_path": str(export_dir / "model.onnx"),
+            "description": "Severity estimation model for all crops",
+            "metrics": {"mae": round(best_val_mae, 4)},
+            "created_at": __import__("datetime")
+            .datetime.now(__import__("datetime").timezone.utc)
+            .isoformat(),
+            "tags": [],
+        }
+        (export_dir / "metadata.json").write_text(
+            json.dumps(registry_metadata, indent=2), encoding="utf-8"
+        )
 
         return TrainResult(
             model_name=self.model_name,
@@ -141,10 +196,14 @@ class SeverityTrainer(BaseTrainer):
         all_scores = []
         all_labels = []
         with torch.no_grad():
-            for batch_images, batch_labels in data_loader:
+            eval_bar = tqdm(data_loader, desc="  [eval]", position=1, leave=False)
+            for batch_images, batch_labels in eval_bar:
                 batch_images = batch_images.to(device)
                 severity_score, _ = model(batch_images)
-                all_scores.extend(severity_score.cpu().squeeze().tolist())
+                scores = severity_score.cpu().squeeze(-1).tolist()
+                if isinstance(scores, float):
+                    scores = [scores]
+                all_scores.extend(scores)
                 all_labels.extend(batch_labels.tolist())
 
         scores = np.array(all_scores)
@@ -154,6 +213,9 @@ class SeverityTrainer(BaseTrainer):
         return mae, rmse
 
     def _make_loader(self, dataset, config: TrainConfig, shuffle: bool = True):
+        if TorchDataLoader is not None and isinstance(dataset, TorchDataLoader):
+            return dataset
+
         if hasattr(dataset, "to_pytorch_dataset"):
             loader = dataset.to_pytorch_dataset()
             if loader is not None:
@@ -175,16 +237,22 @@ class SeverityTrainer(BaseTrainer):
                 arr, label = self._data[idx]
                 return torch.from_numpy(arr), label
 
-        return DataLoader(_NumpyDataset(dataset, config, shuffle), batch_size=config.batch_size, shuffle=False)
+        return TorchDataLoader(
+            _NumpyDataset(dataset, config, shuffle), batch_size=config.batch_size, shuffle=False
+        )
 
-    def evaluate(self, dataset) -> dict:
+    def evaluate(self, dataset, model=None) -> dict:
         if torch is None:
-            return self._evaluate_fallback(dataset)
+            raise RuntimeError(
+                "PyTorch is required to evaluate a severity model. Install the training dependencies."
+            )
 
-        model = self._build_model()
+        if model is None:
+            model = self._build_model()
         model.eval()
         loader = self._make_loader(dataset, TrainConfig(batch_size=32), shuffle=False)
-        mae, rmse = self._evaluate_model(model, loader, torch.device("cpu"))
+        device = next(model.parameters()).device
+        mae, rmse = self._evaluate_model(model, loader, device)
 
         return {
             "mae": mae,
@@ -199,7 +267,8 @@ class SeverityTrainer(BaseTrainer):
         if torch is not None and model is not None:
             try:
                 model.eval()
-                dummy = torch.randn(1, 3, 224, 224)
+                device = next(model.parameters()).device
+                dummy = torch.randn(1, 3, 224, 224).to(device)
                 torch.onnx.export(
                     model,
                     dummy,
@@ -212,53 +281,12 @@ class SeverityTrainer(BaseTrainer):
                         "severity_logits": {0: "batch_size"},
                     },
                     opset_version=17,
+                    dynamo=False,
                 )
                 logger.info("Exported ONNX severity model to %s", output_path)
                 return output_path
-            except Exception:
-                logger.warning("ONNX export failed for %s, writing placeholder", self.model_name, exc_info=True)
+            except Exception as exc:
+                logger.exception("ONNX export failed for %s", self.model_name)
+                raise RuntimeError(f"ONNX export failed for {self.model_name}") from exc
 
-        output_path.write_bytes(b"placeholder")
-        return output_path
-
-    def _train_fallback(self, dataset, config: TrainConfig, export_dir: Path) -> TrainResult:
-        training_log = []
-        best_metric = 0.0
-
-        for epoch in range(config.epochs):
-            epoch_metrics = {
-                "epoch": epoch + 1,
-                "train_loss": 0.3 / (epoch + 1),
-                "val_mae": max(0.05, 0.3 - epoch * 0.02),
-                "val_rmse": max(0.08, 0.4 - epoch * 0.025),
-            }
-            training_log.append(epoch_metrics)
-            if epoch_metrics["val_mae"] < best_metric or best_metric == 0.0:
-                best_metric = epoch_metrics["val_mae"]
-
-        export_path = self.export(export_dir / "model.onnx")
-
-        return TrainResult(
-            model_name=self.model_name,
-            version="1.0.0",
-            best_metric=best_metric,
-            metric_name="mae",
-            epochs_trained=config.epochs,
-            export_path=export_path,
-            class_names=["none", "low", "moderate", "high"],
-            training_log=training_log,
-        )
-
-    def _evaluate_fallback(self, dataset) -> dict:
-        total = 0
-        mae_sum = 0.0
-        for batch_images, batch_labels in dataset:
-            total += len(batch_labels)
-            mae_sum += len(batch_labels) * 0.15
-        mae = mae_sum / total if total > 0 else 0.0
-        return {
-            "mae": mae,
-            "rmse": mae * 1.2,
-            "r_squared": max(0.0, 1.0 - mae),
-            "total_samples": total,
-        }
+        raise RuntimeError("A trained PyTorch model is required before ONNX export.")

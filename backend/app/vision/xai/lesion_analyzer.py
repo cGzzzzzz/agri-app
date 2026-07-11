@@ -5,7 +5,7 @@ import logging
 import cv2
 import numpy as np
 
-from app.vision.xai.types import ColorProfile, TextureFeatures, LesionRegion
+from app.vision.xai.types import ColorProfile, LesionRegion, TextureFeatures
 
 logger = logging.getLogger(__name__)
 
@@ -113,7 +113,8 @@ class LesionAnalyzer:
         lesion_area = sum(
             max(0, d[1][2] - d[1][0]) * max(0, d[1][3] - d[1][1])
             for d in detections
-            if len(d) >= 2 and not (hasattr(d[0], 'class_label') and d[0].class_label == "healthy_leaf")
+            if len(d) >= 2
+            and not (hasattr(d[0], "class_label") and d[0].class_label == "healthy_leaf")
         )
         return min(1.0, lesion_area / max(image_area, 1))
 
@@ -127,7 +128,11 @@ class LesionAnalyzer:
     ) -> "SeverityExplanation":
         from app.vision.xai.types import SeverityExplanation
 
-        lesion_dets = [d for d in detections if not (hasattr(d, 'class_label') and d.class_label == "healthy_leaf")]
+        lesion_dets = [
+            d
+            for d in detections
+            if not (hasattr(d, "class_label") and d.class_label == "healthy_leaf")
+        ]
         areas = []
         for det in lesion_dets:
             if hasattr(det, "area"):
@@ -144,9 +149,13 @@ class LesionAnalyzer:
         reasoning.append(f"Total lesion area: {ratio * 100:.1f}% of visible leaf surface")
         reasoning.append(f"{len(lesion_dets)} distinct lesions detected")
         if largest > 0:
-            reasoning.append(f"Largest lesion covers {largest / max(image_area, 1) * 100:.1f}% of leaf")
+            reasoning.append(
+                f"Largest lesion covers {largest / max(image_area, 1) * 100:.1f}% of leaf"
+            )
         if color_degradation > 0.3:
-            reasoning.append(f"Color analysis shows significant tissue degradation ({color_degradation:.0%})")
+            reasoning.append(
+                f"Color analysis shows significant tissue degradation ({color_degradation:.0%})"
+            )
 
         return SeverityExplanation(
             lesion_area_ratio=ratio,

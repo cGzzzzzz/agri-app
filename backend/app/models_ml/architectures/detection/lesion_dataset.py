@@ -58,13 +58,15 @@ class DetectionDataset:
                 if len(parts) >= 5:
                     class_id = int(parts[0])
                     x_center, y_center, w, h = map(float, parts[1:5])
-                    annotations.append({
-                        "class_id": class_id,
-                        "x_center": x_center,
-                        "y_center": y_center,
-                        "width": w,
-                        "height": h,
-                    })
+                    annotations.append(
+                        {
+                            "class_id": class_id,
+                            "x_center": x_center,
+                            "y_center": y_center,
+                            "width": w,
+                            "height": h,
+                        }
+                    )
 
         return image, annotations
 

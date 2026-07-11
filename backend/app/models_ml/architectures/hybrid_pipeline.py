@@ -1,12 +1,14 @@
-from pathlib import Path
-
 import numpy as np
 import torch
 
-from app.models_ml.architectures.classification.efficientnet_classifier import DiseaseClassifier
 from app.models_ml.architectures.classification.crop_classifier import CropClassifier
+from app.models_ml.architectures.classification.efficientnet_classifier import DiseaseClassifier
 from app.models_ml.architectures.severity.severity_model import SeverityModel
-from app.models_ml.architectures.shared import numpy_to_tensor, compute_lesion_area_ratio, crop_region
+from app.models_ml.architectures.shared import (
+    compute_lesion_area_ratio,
+    crop_region,
+    numpy_to_tensor,
+)
 
 
 class HybridVisionResult:
@@ -50,7 +52,9 @@ class HybridVisionPipeline:
         if self.detector is not None:
             try:
                 result.detections = self.detector.detect(image)
-                result.lesion_count = len([d for d in result.detections if d.class_label != "healthy_leaf"])
+                result.lesion_count = len(
+                    [d for d in result.detections if d.class_label != "healthy_leaf"]
+                )
             except Exception:
                 result.detections = []
 
@@ -85,7 +89,9 @@ class HybridVisionPipeline:
                     best_patch = max(result.lesion_patches, key=lambda p: p.size)
                     tensor = numpy_to_tensor(best_patch)
                     tensor = tensor.to(self.device)
-                    disease_name, disease_conf, disease_probs = classifier.predict_with_confidence(tensor)
+                    disease_name, disease_conf, disease_probs = classifier.predict_with_confidence(
+                        tensor
+                    )
                     result.disease_prediction = disease_name
                     result.disease_confidence = disease_conf
                     result.disease_probabilities = disease_probs

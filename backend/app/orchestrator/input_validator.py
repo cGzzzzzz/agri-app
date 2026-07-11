@@ -9,7 +9,17 @@ class ValidationError(Exception):
 
 class InputValidator:
     ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
-    SUPPORTED_CROPS = {"rice", "tomato", "wheat", "maize", "cotton", "sugarcane", "banana"}
+    SUPPORTED_CROPS = {
+        "rice",
+        "tomato",
+        "potato",
+        "pepper",
+        "wheat",
+        "maize",
+        "cotton",
+        "sugarcane",
+        "banana",
+    }
 
     def validate(
         self,
@@ -51,12 +61,13 @@ class InputValidator:
             )
 
         from app.config import get_settings
+
         settings = get_settings()
         max_bytes = int(settings.image_max_size_mb * 1024 * 1024)
         size_bytes = path.stat().st_size
         if size_bytes > max_bytes:
             raise ValidationError(
-                f"Image too large: {size_bytes / (1024*1024):.1f}MB. "
+                f"Image too large: {size_bytes / (1024 * 1024):.1f}MB. "
                 f"Maximum: {settings.image_max_size_mb}MB"
             )
 

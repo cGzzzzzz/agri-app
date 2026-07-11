@@ -1,32 +1,26 @@
-import json
 import logging
 from dataclasses import asdict
 from datetime import datetime
-from pathlib import Path
 
 import numpy as np
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
-from app.models import Prediction, Recommendation, User
+from app.models import User
 from app.orchestrator.context_builder import ContextBuilder
 from app.orchestrator.crop_resolver import CropResolver
 from app.orchestrator.disease_detector import DiseaseDetector
 from app.orchestrator.image_preprocessor_stage import ImagePreprocessorStage
-from app.orchestrator.input_types import (
-    CropPrediction,
-    DiseasePrediction,
-    OrchestratorContext,
-    OrchestratorInput,
-    OrchestratorResult,
-    SeverityEstimation,
-)
-from app.orchestrator.input_validator import InputValidator, ValidationError
+from app.orchestrator.input_validator import InputValidator
 from app.orchestrator.persistence_layer import PersistenceLayer
-from app.orchestrator.pipeline import Pipeline, PipelineStage
 from app.orchestrator.response_builder import ResponseBuilder
 from app.orchestrator.severity_estimator import SeverityEstimatorStage
-from app.schemas.disease import DiseaseAnalysisRead, PredictorOutput, SeverityOutput, XAIReportOutput
+from app.schemas.disease import (
+    DiseaseAnalysisRead,
+    PredictorOutput,
+    SeverityOutput,
+    XAIReportOutput,
+)
 from app.schemas.recommendation import RecommendationPayload
 from app.services.recommendation_engine import RecommendationEngine
 
@@ -70,8 +64,8 @@ class XAIReportStage:
             return None, None
 
         try:
-            from PIL import Image as PILImage
             import torch
+            from PIL import Image as PILImage
 
             pil_img = PILImage.open(image_path).convert("RGB")
             img_224 = pil_img.resize((224, 224), PILImage.BILINEAR)
@@ -101,7 +95,15 @@ class XAIReportStage:
 
         try:
             xai_output = XAIReportOutput(
-                detections=[{"bbox": list(d.bbox), "class_label": d.class_label, "confidence": d.confidence, "area_pixels": d.area_pixels} for d in report.detections],
+                detections=[
+                    {
+                        "bbox": list(d.bbox),
+                        "class_label": d.class_label,
+                        "confidence": d.confidence,
+                        "area_pixels": d.area_pixels,
+                    }
+                    for d in report.detections
+                ],
                 lesion_regions=[r.to_dict() for r in report.lesion_regions],
                 class_probabilities=report.class_probabilities,
                 predicted_class=report.predicted_class,
@@ -171,13 +173,16 @@ class HierarchicalAgriculturalOrchestrator:
 
         context = self.context_builder.build(user, farm_id, crop_id)
 
-        crop = self.crop_resolver.resolve({"input": input_data, "context": context})
+        processed = self.image_preprocessor.process({"input": input_data, "context": context})
 
         pipeline_state = {
             "input": input_data,
             "context": context,
-            "crop_resolution": crop,
+            "image_preprocessing": processed,
         }
+
+        crop = self.crop_resolver.resolve(pipeline_state)
+        pipeline_state["crop_resolution"] = crop
 
         disease = self.disease_detector.detect(pipeline_state)
 
@@ -214,21 +219,58 @@ class HierarchicalAgriculturalOrchestrator:
         response = self.response_builder.generate(recommendation_payload)
 
         trace: list[dict] = []
-        trace.append({"step": "input_validation", "status": "completed", "data": {"image_path": image_path}})
-        trace.append({"step": "context_builder", "status": "completed", "data": context.__dict__ if hasattr(context, '__dict__') else context})
+        trace.append(
+            {"step": "input_validation", "status": "completed", "data": {"image_path": image_path}}
+        )
+        trace.append(
+            {
+                "step": "context_builder",
+                "status": "completed",
+                "data": context.__dict__ if hasattr(context, "__dict__") else context,
+            }
+        )
+        trace.append(
+            {
+                "step": "image_preprocessing",
+                "status": "completed",
+                "data": {
+                    "format": processed.image_format,
+                    "original_size": processed.original_size,
+                    "quality_warnings": processed.quality_warnings,
+                },
+            }
+        )
         trace.append({"step": "crop_resolution", "status": "completed", "data": asdict(crop)})
         trace.append({"step": "disease_detection", "status": "completed", "data": asdict(disease)})
-        trace.append({"step": "severity_estimation", "status": "completed", "data": asdict(severity)})
+        trace.append(
+            {"step": "severity_estimation", "status": "completed", "data": asdict(severity)}
+        )
         trace.append({"step": "weather_context", "status": "completed", "data": weather})
         trace.append({"step": "historical_context", "status": "completed", "data": history})
-        trace.append({"step": "recommendation_engine", "status": "completed", "data": recommendation_payload})
+        trace.append(
+            {"step": "recommendation_engine", "status": "completed", "data": recommendation_payload}
+        )
 
         if xai_report is not None:
-            trace.append({"step": "xai_report_generation", "status": "completed", "data": {"farmer_view": xai_farmer_view}})
+            trace.append(
+                {
+                    "step": "xai_report_generation",
+                    "status": "completed",
+                    "data": {"farmer_view": xai_farmer_view},
+                }
+            )
         else:
-            trace.append({"step": "xai_report_generation", "status": "skipped", "data": {"reason": "include_xai_heatmap=False or XAI unavailable"}})
+            trace.append(
+                {
+                    "step": "xai_report_generation",
+                    "status": "skipped",
+                    "data": {"reason": "include_xai_heatmap=False or XAI unavailable"},
+                }
+            )
 
-        trace.append({"step": "response_builder", "status": "completed", "data": {"response": response}})
+        trace.append(
+            {"step": "response_builder", "status": "completed", "data": {"response": response}}
+        )
 
         rec_payload = RecommendationPayload(**recommendation_payload)
 
@@ -246,13 +288,7 @@ class HierarchicalAgriculturalOrchestrator:
             prediction_id=prediction.id,
             image_id=image_id,
             crop=PredictorOutput(**asdict(crop)),
-            disease=PredictorOutput(
-                label=disease.label,
-                confidence=disease.confidence,
-                evidence=disease.evidence,
-                rules_fired=disease.rules_fired,
-                heatmap_hint=disease.heatmap_hint,
-            ),
+            disease=PredictorOutput(**asdict(disease)),
             severity=SeverityOutput(**asdict(severity)),
             weather=weather,
             history=history,
