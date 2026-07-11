@@ -1,17 +1,22 @@
-version: "3.8"
-
 services:
   backend:
     build: ./backend
     ports:
       - "8000:8000"
-    env_file:
-      - .env
-    environment:
-      - DATABASE_URL=sqlite:///./agriai.db
-      - CORS_ORIGINS=http://localhost:3000,http://localhost:8080
-    volumes:
-      - ./backend:/app
+    env_file: .env
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
     restart: unless-stopped
 
   frontend:
@@ -19,5 +24,11 @@ services:
     ports:
       - "3000:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:80"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
     restart: unless-stopped

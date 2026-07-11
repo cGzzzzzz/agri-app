@@ -44,6 +44,12 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
     gemini_model: str = "gemini-2.5-flash"
 
+    nvidia_api_key: str = ""
+    nvidia_model: str = "meta/llama-3.1-70b-instruct"
+
+    deepseek_api_key: str = ""
+    deepseek_model: str = "deepseek-chat"
+
     # Weather
     weather_provider: str = "local"  # "local" | "openmeteo"
 

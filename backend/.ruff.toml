@@ -1,5 +1,5 @@
 line-length = 100
-target-version = "py311"
+target-version = "py310"
 
 [lint]
 select = ["E", "F", "I", "N", "W", "UP", "B", "A", "SIM"]
@@ -12,6 +12,7 @@ ignore = [
     "N803",    # invalid-argument-name
     "A002",    # builtin-argument-shadowing
     "E402",    # module-import-not-at-top
+    "UP017",   # datetime.UTC not available in Python 3.10
 ]
 
 [format]

@@ -6,8 +6,8 @@ from app.llm.provider import LLMProvider
 logger = logging.getLogger(__name__)
 
 
-class GroqProvider(LLMProvider):
-    def __init__(self, api_key: str, model: str = "llama-3.3-70b-versatile"):
+class NvidiaProvider(LLMProvider):
+    def __init__(self, api_key: str, model: str = "meta/llama-3.1-70b-instruct"):
         self._api_key = api_key
         self._model = model
         self._client = None
@@ -18,13 +18,13 @@ class GroqProvider(LLMProvider):
 
             self._client = OpenAI(
                 api_key=self._api_key,
-                base_url="https://api.groq.com/openai/v1",
+                base_url="https://integrate.api.nvidia.com/v1",
             )
         return self._client
 
     @property
     def provider_name(self) -> str:
-        return "groq"
+        return "nvidia"
 
     @property
     def is_available(self) -> bool:
@@ -56,14 +56,9 @@ class GroqProvider(LLMProvider):
             return response.choices[0].message.content or ""
         except Exception as e:
             if hasattr(e, "status_code") and e.status_code == 429:
-                retry_after = getattr(e, "response", None)
-                if retry_after is not None:
-                    retry_header = retry_after.headers.get("retry-after", "unknown")
-                    logger.warning("Groq 429 rate limit hit — retry-after: %ss", retry_header)
-                else:
-                    logger.warning("Groq 429 rate limit hit")
+                logger.warning("NVIDIA NIM 429 rate limit hit")
             else:
-                logger.error("Groq completion failed", exc_info=True)
+                logger.error("NVIDIA NIM completion failed", exc_info=True)
             return ""
 
     def complete_structured(
@@ -84,17 +79,16 @@ class GroqProvider(LLMProvider):
                 model=self._model,
                 messages=[
                     {"role": "system", "content": structured_prompt},
-                    {"role": "user", "content": user_prompt},
+                    {"role": "user", "content": "Generate JSON"},
                 ],
                 temperature=temperature,
                 max_tokens=max_tokens,
-                response_format={"type": "json_object"},
             )
             content = response.choices[0].message.content or "{}"
             return json.loads(content)
         except Exception as e:
             if hasattr(e, "status_code") and e.status_code == 429:
-                logger.warning("Groq 429 rate limit hit (structured)")
+                logger.warning("NVIDIA NIM 429 rate limit hit (structured)")
             else:
-                logger.error("Groq structured completion failed", exc_info=True)
+                logger.error("NVIDIA NIM structured completion failed", exc_info=True)
             return {}

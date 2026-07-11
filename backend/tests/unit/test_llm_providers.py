@@ -22,7 +22,12 @@ class TestLLMProvider:
     def test_get_provider_fallback_to_null(self):
         with patch("app.llm.provider.get_settings") as mock_settings:
             mock_settings.return_value = MagicMock(
-                llm_provider="none", openai_api_key="", groq_api_key="", gemini_api_key=""
+                llm_provider="none",
+                openai_api_key="",
+                groq_api_key="",
+                gemini_api_key="",
+                nvidia_api_key="",
+                deepseek_api_key="",
             )
             get_llm_provider.cache_clear()
             provider = get_llm_provider()

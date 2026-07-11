@@ -40,12 +40,13 @@ class SttService:
         processed = preprocess_audio(audio_bytes, sample_rate_in=sample_rate, channels=channels)
 
         content_type = "audio/wav"
-        files = {"file": (filename, processed, content_type)}
+        wav_name = filename.rsplit(".", 1)[0] + ".wav" if "." in filename else filename + ".wav"
+        files = {"file": (wav_name, processed, content_type)}
         data = {
             "model": "whisper-large-v3",
             "language": language,
             "prompt": "Voice dictation for agricultural advice about crops, diseases, weather, and farming.",
-            "temperature": "0",
+            "temperature": 0,
         }
 
         try:
@@ -62,7 +63,7 @@ class SttService:
             return _filter_hallucinations(text)
         except httpx.HTTPStatusError as e:
             logger.error("Groq STT HTTP error %s: %s", e.response.status_code, e.response.text)
-            raise RuntimeError(f"STT failed: {e.response.status_code}") from e
+            raise RuntimeError(f"STT failed ({e.response.status_code}): {e.response.text[:200]}") from e
         except ValueError:
             raise
         except Exception as e:
