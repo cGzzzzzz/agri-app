@@ -14,7 +14,12 @@ data/
 .env
 storage/
 e2e_storage/
+e2e_async_storage/
+artifacts/
+.venv/
+venv/
 Dockerfile
 .dockerignore
 *.md
 .docker
+*.log

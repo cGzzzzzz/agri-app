@@ -19,7 +19,9 @@ class Conversation(Base):
     )
     input_type: Mapped[str] = mapped_column(String(30), default="text")
     question: Mapped[str] = mapped_column(Text)
-    response: Mapped[str] = mapped_column(Text)
+    response: Mapped[str] = mapped_column(Text, default="")
+    status: Mapped[str] = mapped_column(String(20), default="pending", index=True)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     context_snapshot: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 

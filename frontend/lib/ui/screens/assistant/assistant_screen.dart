@@ -10,6 +10,7 @@ import 'package:record/record.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
+import '../../../core/theme/app_theme.dart';
 import '../../../services/api_service.dart';
 import '../../../services/auth_service.dart';
 
@@ -27,6 +28,8 @@ class _AssistantScreenState extends State<AssistantScreen>
   final ScrollController _scrollController = ScrollController();
   bool _isResponding = false;
   bool _historyLoaded = false;
+  Timer? _chatPollTimer;
+  int? _pendingMessageId;
 
   final SpeechToText _speech = SpeechToText();
   bool _speechAvailable = false;
@@ -75,6 +78,13 @@ class _AssistantScreenState extends State<AssistantScreen>
   };
 
   String get _whisperLanguage => _selectedLocale.split('_').first;
+  String get _selectedResponseLanguage => _selectedLocale.split('_').first.toLowerCase();
+
+  String? _normalizedText(dynamic value) {
+    if (value is! String) return null;
+    final text = value.trim();
+    return text.isEmpty ? null : text;
+  }
 
   @override
   void initState() {
@@ -86,12 +96,15 @@ class _AssistantScreenState extends State<AssistantScreen>
     _pulseAnimation = Tween<double>(begin: 1.0, end: 1.3).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
-    _loadHistory();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadHistory();
+    });
     if (!kIsWeb) _initSpeech();
   }
 
   @override
   void dispose() {
+    _chatPollTimer?.cancel();
     _speech.cancel();
     _recorder.dispose();
     _pulseController.dispose();
@@ -326,11 +339,34 @@ class _AssistantScreenState extends State<AssistantScreen>
     if (mounted && history.isNotEmpty) {
       setState(() {
         for (final h in history.reversed) {
-          messages.add({
-            'text': h['question'] ?? h['message'] ?? '',
-            'isUser': true
-          });
-          messages.add({'text': h['response'] ?? '', 'isUser': false});
+          final question = _normalizedText(h['question'] ?? h['message']);
+          final response = _normalizedText(h['response']);
+          final errorMessage = _normalizedText(h['error_message']);
+
+          if (question != null) {
+            messages.add({'text': question, 'isUser': true});
+          }
+
+          if (h['status'] == 'completed') {
+            if (response != null) {
+              messages.add({'text': response, 'isUser': false});
+            } else {
+              messages.add({
+                'text': 'A previous assistant reply was empty.',
+                'isUser': false,
+                'isError': true,
+              });
+            }
+          } else if (h['status'] == 'pending' || h['status'] == 'processing') {
+            _pendingMessageId = h['id'] as int?;
+            _isResponding = _pendingMessageId != null;
+          } else if (h['status'] == 'failed') {
+            messages.add({
+              'text': errorMessage ?? 'A previous assistant reply failed to generate.',
+              'isUser': false,
+              'isError': true,
+            });
+          }
         }
         _historyLoaded = true;
       });
@@ -347,6 +383,7 @@ class _AssistantScreenState extends State<AssistantScreen>
       });
     }
     _scrollToBottom();
+    if (_pendingMessageId != null) _startChatPolling(_pendingMessageId!);
   }
 
   Future<void> _sendMessage() async {
@@ -362,15 +399,55 @@ class _AssistantScreenState extends State<AssistantScreen>
 
     final auth = Provider.of<AuthService>(context, listen: false);
     final api = ApiService(auth);
-    final response = await api.sendMessage(query);
+    final accepted = await api.sendMessage(
+      query,
+      responseLanguage: _selectedResponseLanguage,
+    );
+    final messageId = accepted?['message_id'];
+    if (messageId is int) {
+      _startChatPolling(messageId);
+      return;
+    }
 
     if (mounted) {
       setState(() {
-        messages.add({'text': response, 'isUser': false});
+        messages.add({'text': 'Your message could not be submitted. Please check the connection and try again.', 'isUser': false, 'isError': true});
         _isResponding = false;
       });
       _scrollToBottom();
     }
+  }
+
+  void _startChatPolling(int messageId) {
+    _chatPollTimer?.cancel();
+    _pendingMessageId = messageId;
+    _chatPollTimer = Timer.periodic(const Duration(seconds: 2), (timer) async {
+      final auth = Provider.of<AuthService>(context, listen: false);
+      final status = await ApiService(auth).getChatStatus(messageId);
+      if (!mounted || status == null) return;
+
+      final state = status['status'];
+      if (state == 'completed') {
+        timer.cancel();
+        final response = status['response'] as String?;
+        setState(() {
+          if (response != null && response.isNotEmpty) {
+            messages.add({'text': response, 'isUser': false});
+          }
+          _pendingMessageId = null;
+          _isResponding = false;
+        });
+        _scrollToBottom();
+      } else if (state == 'failed') {
+        timer.cancel();
+        setState(() {
+          messages.add({'text': 'The AI response could not be generated. Please try again.', 'isUser': false, 'isError': true});
+          _pendingMessageId = null;
+          _isResponding = false;
+        });
+        _scrollToBottom();
+      }
+    });
   }
 
   void _showLocalePicker() {
@@ -382,12 +459,20 @@ class _AssistantScreenState extends State<AssistantScreen>
           children: [
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Text('Voice Language',
+              child: Text('Assistant Language',
                   style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Colors.grey.shade800)),
             ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                'Assistant replies follow this selection. Default is English.',
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+              ),
+            ),
+            const SizedBox(height: 8),
             Flexible(
               child: ListView(
                 shrinkWrap: true,
@@ -440,7 +525,7 @@ class _AssistantScreenState extends State<AssistantScreen>
             onPressed: _showLocalePicker,
             icon: Icon(Icons.language, size: 18, color: Colors.grey.shade700),
             label: Text(
-              _currentLanguageLabel,
+              '$_currentLanguageLabel reply',
               style:
                   TextStyle(fontSize: 12, color: Colors.grey.shade700),
             ),
@@ -456,9 +541,7 @@ class _AssistantScreenState extends State<AssistantScreen>
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               itemCount: messages.length + (_isResponding ? 1 : 0),
               itemBuilder: (context, index) {
-                final reversedIndex = messages.length - 1 - index;
-
-                if (reversedIndex < 0) {
+                if (_isResponding && index == 0) {
                   return Align(
                     alignment: Alignment.centerLeft,
                     child: Container(
@@ -480,8 +563,10 @@ class _AssistantScreenState extends State<AssistantScreen>
                   );
                 }
 
-                final msg = messages[reversedIndex];
+                final msgIndex = messages.length - 1 - (_isResponding ? index - 1 : index);
+                final msg = messages[msgIndex];
                 final isUser = msg['isUser'] as bool;
+                final isError = msg['isError'] == true;
                 return Align(
                   alignment:
                       isUser ? Alignment.centerRight : Alignment.centerLeft,
@@ -490,7 +575,9 @@ class _AssistantScreenState extends State<AssistantScreen>
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
-                      color: isUser ? primaryColor : const Color(0xFFF1F3F5),
+                      color: isError
+                          ? const Color(0xFFFFF2F2)
+                          : (isUser ? primaryColor : const Color(0xFFF1F3F5)),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     constraints: BoxConstraints(
@@ -498,11 +585,14 @@ class _AssistantScreenState extends State<AssistantScreen>
                     child: SelectableText(
                       msg['text'] as String,
                       style: TextStyle(
-                          color: isUser
+                          color: isError
+                              ? const Color(0xFF8A0000)
+                              : isUser
                               ? Colors.white
                               : const Color(0xFF1C1E21),
                           fontSize: 14,
-                          height: 1.4),
+                          height: 1.4,
+                          fontFamilyFallback: AppTheme.multilingualFontFallback),
                     ),
                   ),
                 );

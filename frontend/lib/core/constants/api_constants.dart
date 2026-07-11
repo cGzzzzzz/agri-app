@@ -18,6 +18,7 @@ class ApiEndpoints {
 
   static const String chat = '$apiPrefix/chat';
   static const String chatHistory = '$apiPrefix/chat/history';
+  static String chatStatus(int messageId) => '$chat/status/$messageId';
 
   static const String diseaseAnalyze = '$apiPrefix/disease/analyze';
   static const String diseaseHistory = '$apiPrefix/disease/history';

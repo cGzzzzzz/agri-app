@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../services/api_service.dart';
 import '../../../services/auth_service.dart';
 import '../main_navigation.dart';
 import 'login_screen.dart';
@@ -17,9 +18,27 @@ class _AuthWrapperState extends State<AuthWrapper> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final auth = Provider.of<AuthService>(context, listen: false);
-      auth.init();
+      _initAuth();
     });
+  }
+
+  Future<void> _initAuth() async {
+    final auth = Provider.of<AuthService>(context, listen: false);
+    await auth.init();
+
+    // If we have a token, verify it's still valid by calling /auth/me
+    if (auth.isAuthenticated) {
+      final api = ApiService(auth);
+      final profile = await api.getProfile();
+      if (profile == null) {
+        // Token invalid/expired - logout and show login
+        await auth.logout();
+        if (mounted) setState(() {});
+        return;
+      }
+    }
+
+    if (mounted) setState(() {});
   }
 
   @override
@@ -27,9 +46,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
     final auth = Provider.of<AuthService>(context);
 
     if (!auth.isInitialized) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     if (auth.isAuthenticated) {

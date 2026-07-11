@@ -7,6 +7,8 @@ import 'services/auth_service.dart';
 import 'ui/screens/auth/auth_wrapper.dart';
 import 'ui/screens/url_helper.dart';
 
+final navigatorKey = GlobalKey<NavigatorState>();
+
 void main() {
   final initialTab = getHashEarly();
 
@@ -32,6 +34,7 @@ class AgriAIApp extends StatelessWidget {
     return MaterialApp(
       title: 'AgriAI',
       debugShowCheckedModeBanner: false,
+      navigatorKey: navigatorKey,
       theme: AppTheme.lightTheme,
       home: AuthWrapper(initialTab: initialTab),
     );

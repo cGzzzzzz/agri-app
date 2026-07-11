@@ -13,6 +13,15 @@ class AppTheme {
   
   static const Color errorRed = Color(0xFFB02A37); // Clean, professional dark red
   static const Color alertOrange = Color(0xFFD67D00); // Warm alert amber
+  static const List<String> multilingualFontFallback = [
+    'Segoe UI',
+    'Nirmala UI',
+    'Noto Sans',
+    'Noto Sans Devanagari',
+    'Noto Sans Tamil',
+    'Arial Unicode MS',
+    'sans-serif',
+  ];
 
   static ThemeData get lightTheme {
     return ThemeData(
@@ -43,6 +52,7 @@ class AppTheme {
           fontWeight: FontWeight.w600,
           color: textDark,
           letterSpacing: -0.2,
+          fontFamilyFallback: multilingualFontFallback,
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -61,8 +71,16 @@ class AppTheme {
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: primaryGreen, width: 1.5),
         ),
-        labelStyle: const TextStyle(color: textMuted, fontSize: 14),
-        hintStyle: const TextStyle(color: textMuted, fontSize: 14),
+        labelStyle: const TextStyle(
+          color: textMuted,
+          fontSize: 14,
+          fontFamilyFallback: multilingualFontFallback,
+        ),
+        hintStyle: const TextStyle(
+          color: textMuted,
+          fontSize: 14,
+          fontFamilyFallback: multilingualFontFallback,
+        ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -77,6 +95,7 @@ class AppTheme {
             fontSize: 15,
             fontWeight: FontWeight.w600,
             letterSpacing: -0.1,
+            fontFamilyFallback: multilingualFontFallback,
           ),
         ),
       ),
@@ -86,27 +105,32 @@ class AppTheme {
           fontWeight: FontWeight.w700,
           color: textDark,
           letterSpacing: -0.5,
+          fontFamilyFallback: multilingualFontFallback,
         ),
         headlineMedium: TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.w600,
           color: textDark,
           letterSpacing: -0.3,
+          fontFamilyFallback: multilingualFontFallback,
         ),
         titleLarge: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w600,
           color: textDark,
+          fontFamilyFallback: multilingualFontFallback,
         ),
         bodyLarge: TextStyle(
           fontSize: 15,
           color: textDark,
           height: 1.5,
+          fontFamilyFallback: multilingualFontFallback,
         ),
         bodyMedium: TextStyle(
           fontSize: 13,
           color: textMuted,
           height: 1.4,
+          fontFamilyFallback: multilingualFontFallback,
         ),
       ),
     );

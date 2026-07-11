@@ -12,19 +12,21 @@ class TestChatFlow:
             mock_conv.crop_id = None
             mock_conv.input_type = "text"
             mock_conv.question = "My rice leaves have brown spots"
-            mock_conv.response = "Your rice crop may have leaf blast"
+            mock_conv.response = ""
+            mock_conv.status = "pending"
             mock_conv.created_at = datetime.now(timezone.utc)
-            MockChat.return_value.send.return_value = (mock_conv, {})
+            MockChat.return_value.create_pending.return_value = (mock_conv, {})
 
             resp = client.post(
                 "/api/v1/chat",
                 headers=auth_headers,
                 json={"message": "My rice leaves have brown spots"},
             )
-        assert resp.status_code == 200
+        assert resp.status_code == 202
         data = resp.json()
         assert data["success"] is True
-        assert "response" in data["data"]
+        assert data["data"]["message_id"] == 1
+        assert data["data"]["status"] == "pending"
 
     def test_chat_without_message(self, client, auth_headers):
         resp = client.post("/api/v1/chat", headers=auth_headers, json={})

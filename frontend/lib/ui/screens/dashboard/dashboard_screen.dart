@@ -23,12 +23,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    _loadData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadData();
+    });
   }
 
   Future<void> _loadData() async {
     try {
       final auth = Provider.of<AuthService>(context, listen: false);
+      
+      // Wait for auth to be initialized
+      if (!auth.isInitialized) {
+        await Future.delayed(const Duration(milliseconds: 100));
+        if (!auth.isInitialized) return;
+      }
+
       final api = ApiService(auth);
 
       final position = await LocationService.getCurrentLocation();
@@ -238,7 +247,9 @@ class _RecentScansWidgetState extends State<_RecentScansWidget> {
   @override
   void initState() {
     super.initState();
-    _load();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _load();
+    });
   }
 
   Future<void> _load() async {

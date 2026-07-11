@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile, status
+from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, HTTPException, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
@@ -166,11 +166,17 @@ def update_crop(
     return {"status": "success", "crop": get_crop(db, user)}
 
 
-@app.post("/api/chat")
-def send_chat(payload: dict, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+@app.post("/api/chat", status_code=status.HTTP_202_ACCEPTED)
+def send_chat(
+    payload: dict,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     farm, crop = _get_user_farm_and_crop(db, user)
-    conversation, _ = ChatService(db).send(user, payload.get("message", ""), farm.id, crop.id)
-    return {"response": conversation.response}
+    conversation, _ = ChatService(db).create_pending(user, payload.get("message", ""), farm.id, crop.id)
+    background_tasks.add_task(ChatService.generate_and_persist, conversation.id)
+    return {"message_id": conversation.id, "status": conversation.status}
 
 
 @app.post("/api/scan")

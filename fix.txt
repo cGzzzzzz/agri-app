@@ -1,43 +1,33 @@
-D:\Agri App\backend>"D:\Agri App\backend\.venv\Scripts\uvicorn.exe" app.main:app --host 127.0.0.1 --port 8000 --reload
-←[32mINFO←[0m:     Will watch for changes in these directories: ['D:\\Agri App\\backend']
-←[32mINFO←[0m:     Uvicorn running on ←[1mhttp://127.0.0.1:8000←[0m (Press CTRL+C to quit)
-←[32mINFO←[0m:     Started reloader process [←[36m←[1m2360←[0m] using ←[36m←[1mStatReload←[0m
-Process SpawnProcess-1:
+    await original_route.handle(scope, receive, send)
+  File "D:\Agri App\backend\.venv\lib\site-packages\fastapi\routing.py", line 1264, in handle
+    await app(scope, receive, send)
+  File "D:\Agri App\backend\.venv\lib\site-packages\fastapi\routing.py", line 150, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "D:\Agri App\backend\.venv\lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "D:\Agri App\backend\.venv\lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "D:\Agri App\backend\.venv\lib\site-packages\fastapi\routing.py", line 136, in app
+    response = await f(request)
+  File "D:\Agri App\backend\.venv\lib\site-packages\fastapi\routing.py", line 690, in app
+    raw_response = await run_endpoint_function(
+  File "D:\Agri App\backend\.venv\lib\site-packages\fastapi\routing.py", line 344, in run_endpoint_function
+    return await dependant.call(**values)
+  File "D:\Agri App\backend\app\stt\router.py", line 25, in transcribe
+    text = SttService().transcribe(
+  File "D:\Agri App\backend\app\stt\service.py", line 65, in transcribe
+    raise RuntimeError(f"STT failed: {e.response.status_code}") from e
+RuntimeError: STT failed: 400
+Groq completion failed
 Traceback (most recent call last):
-  File "C:\Program Files\Python310\lib\multiprocessing\process.py", line 314, in _bootstrap
-    self.run()
-  File "C:\Program Files\Python310\lib\multiprocessing\process.py", line 108, in run
-    self._target(*self._args, **self._kwargs)
-  File "D:\Agri App\backend\.venv\lib\site-packages\uvicorn\_subprocess.py", line 80, in subprocess_started
-    target(sockets=sockets)
-  File "D:\Agri App\backend\.venv\lib\site-packages\uvicorn\server.py", line 74, in run
-    return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
-  File "D:\Agri App\backend\.venv\lib\site-packages\uvicorn\_compat.py", line 60, in asyncio_run
-    return loop.run_until_complete(main)
-  File "C:\Program Files\Python310\lib\asyncio\base_events.py", line 649, in run_until_complete
-    return future.result()
-  File "D:\Agri App\backend\.venv\lib\site-packages\uvicorn\server.py", line 78, in serve
-    await self._serve(sockets)
-  File "D:\Agri App\backend\.venv\lib\site-packages\uvicorn\server.py", line 85, in _serve
-    config.load()
-  File "D:\Agri App\backend\.venv\lib\site-packages\uvicorn\config.py", line 493, in load
-    self.loaded_app = self.load_app()
-  File "D:\Agri App\backend\.venv\lib\site-packages\uvicorn\config.py", line 427, in load_app
-    return import_from_string(self.app)
-  File "D:\Agri App\backend\.venv\lib\site-packages\uvicorn\importer.py", line 19, in import_from_string
-    module = importlib.import_module(module_str)
-  File "C:\Program Files\Python310\lib\importlib\__init__.py", line 126, in import_module
-    return _bootstrap._gcd_import(name[level:], package, level)
-  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
-  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
-  File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
-  File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
-  File "<frozen importlib._bootstrap_external>", line 883, in exec_module
-  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
-  File "D:\Agri App\backend\app\main.py", line 7, in <module>
-    from app.auth.dependencies import get_current_user
-  File "D:\Agri App\backend\app\auth\dependencies.py", line 8, in <module>
-    from app.services.security import decode_token
-  File "D:\Agri App\backend\app\services\security.py", line 1, in <module>
-    from datetime import UTC, datetime, timedelta
-ImportError: cannot import name 'UTC' from 'datetime' (C:\Program Files\Python310\lib\datetime.py)
+  File "D:\Agri App\backend\app\llm\groq_provider.py", line 50, in complete
+    response = client.chat.completions.create(
+  File "D:\Agri App\backend\.venv\lib\site-packages\openai\_utils\_utils.py", line 298, in wrapper
+    return func(*args, **kwargs)
+  File "D:\Agri App\backend\.venv\lib\site-packages\openai\resources\chat\completions\completions.py", line 1281, in create
+    return self._post(
+  File "D:\Agri App\backend\.venv\lib\site-packages\openai\_base_client.py", line 1332, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+  File "D:\Agri App\backend\.venv\lib\site-packages\openai\_base_client.py", line 1105, in request
+    raise self._make_status_error_from_response(err.response) from None
+openai.RateLimitError: Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01kky7jfwef1japcgwjk820dec` service tier `on_demand` on tokens per day (TPD): Limit 100000, Used 94597, Requested 10604. Please try again in 1h14m53.664s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_ex

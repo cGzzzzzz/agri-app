@@ -2,16 +2,19 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 import '../core/constants/api_constants.dart';
-import '../models/farm.dart';
 import '../models/crop.dart';
+import '../models/farm.dart';
 import '../services/auth_service.dart';
+import '../main.dart' show navigatorKey;
 
 class ApiService {
   final AuthService _auth;
   ApiService(this._auth);
 
-  static const _timeout = Duration(seconds: 15);
+  // The NIM container may need time to accept work during GPU load spikes.
+  static const _timeout = Duration(seconds: 60);
 
   Map<String, String> get _headers => {
         'Content-Type': 'application/json',
@@ -25,21 +28,27 @@ class ApiService {
         final body = json.decode(response.body);
         return body is Map<String, dynamic> ? body : null;
       }
+      if (response.statusCode == 401) {
+        await _handleUnauthorized();
+      }
     } catch (e) {
       debugPrint('GET $url error: $e');
     }
     return null;
   }
 
-  Future<Map<String, dynamic>?> _post(String url, Map<String, dynamic> data) async {
+  Future<Map<String, dynamic>?> _post(String url, Map<String, dynamic> data, {Duration? timeout}) async {
     try {
       final response = await http.post(
         Uri.parse('${Api.baseUrl}$url'),
         headers: _headers,
         body: json.encode(data),
-      ).timeout(_timeout);
-      if (response.statusCode == 200 || response.statusCode == 201) {
+      ).timeout(timeout ?? _timeout);
+      if (response.statusCode == 200 || response.statusCode == 201 || response.statusCode == 202) {
         return json.decode(response.body) as Map<String, dynamic>;
+      }
+      if (response.statusCode == 401) {
+        await _handleUnauthorized();
       }
     } catch (e) {
       debugPrint('POST $url error: $e');
@@ -57,6 +66,9 @@ class ApiService {
       if (response.statusCode == 200) {
         return json.decode(response.body) as Map<String, dynamic>;
       }
+      if (response.statusCode == 401) {
+        await _handleUnauthorized();
+      }
     } catch (e) {
       debugPrint('PATCH $url error: $e');
     }
@@ -69,10 +81,54 @@ class ApiService {
       if (response.statusCode == 200) {
         return json.decode(response.body) as Map<String, dynamic>;
       }
+      if (response.statusCode == 401) {
+        await _handleUnauthorized();
+      }
     } catch (e) {
       debugPrint('DELETE $url error: $e');
     }
     return null;
+  }
+
+  Future<void> _handleUnauthorized() async {
+    debugPrint('401 Unauthorized - attempting token refresh');
+    final refreshed = await _tryRefreshToken();
+    if (!refreshed) {
+      debugPrint('Token refresh failed - logging out');
+      _auth.logout();
+      navigatorKey.currentState?.pushNamedAndRemoveUntil('/', (route) => false);
+    }
+  }
+
+  Future<bool> _tryRefreshToken() async {
+    final refreshToken = _auth.refreshToken;
+    if (refreshToken == null) return false;
+
+    try {
+      final response = await http.post(
+        Uri.parse('${Api.baseUrl}${ApiEndpoints.refresh}'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'refresh_token': refreshToken}),
+      ).timeout(_timeout);
+
+      if (response.statusCode == 200) {
+        final body = json.decode(response.body);
+        final data = body['data'];
+        if (data != null && data['tokens'] != null) {
+          final tokens = data['tokens'] as Map<String, dynamic>;
+          await _auth.saveAuth(
+            accessToken: tokens['access_token'],
+            refreshToken: tokens['refresh_token'],
+            user: _auth.user!,
+          );
+          debugPrint('Token refreshed successfully');
+          return true;
+        }
+      }
+    } catch (e) {
+      debugPrint('Token refresh error: $e');
+    }
+    return false;
   }
 
   Map<String, dynamic>? _extractData(Map<String, dynamic>? response) {
@@ -321,21 +377,24 @@ class ApiService {
 
   // ─── Chat ───
 
-  Future<String> sendMessage(String message, {int? farmId, int? cropId}) async {
+  Future<Map<String, dynamic>?> sendMessage(
+    String message, {
+    int? farmId,
+    int? cropId,
+    String responseLanguage = 'en',
+  }) async {
     final result = await _post(ApiEndpoints.chat, {
       'message': message,
       'farm_id': farmId,
       'crop_id': cropId,
+      'response_language': responseLanguage,
     });
-    final data = _extractData(result);
-    if (data != null && data['response'] is String) {
-      return data['response'] as String;
-    }
-    final msg = message.toLowerCase();
-    if (msg.contains('yellow') || msg.contains('leaf')) {
-      return 'Leaf yellowing may indicate nitrogen deficiency or early disease. Please upload a photo for analysis. (Offline)';
-    }
-    return 'I can help with crop diseases, weather, and farm management. Try asking about specific symptoms or upload a leaf scan. (Offline)';
+    return _extractData(result);
+  }
+
+  Future<Map<String, dynamic>?> getChatStatus(int messageId) async {
+    final result = await _get(ApiEndpoints.chatStatus(messageId));
+    return _extractData(result);
   }
 
   Future<List<Map<String, dynamic>>> getChatHistory() async {
@@ -396,5 +455,5 @@ class ApiService {
 }
 
 class Api {
-  static String get baseUrl => kIsWeb ? 'http://localhost:8000' : 'http://192.168.0.199:8000';
+  static String get baseUrl => ''; // Relative URLs via nginx proxy
 }
