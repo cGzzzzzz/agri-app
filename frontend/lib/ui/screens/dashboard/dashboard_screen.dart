@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import '../../../models/crop.dart';
 import '../../../services/api_service.dart';
@@ -40,16 +41,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       final api = ApiService(auth);
 
-      final position = await LocationService.getCurrentLocation();
+      final locationResult = await LocationService.getResult();
       if (mounted) {
         setState(() {
-          _gpsAvailable = position != null;
-          _gpsStatus = position != null ? '' : 'No GPS available';
+          _gpsAvailable = locationResult.hasLocation;
+          _gpsStatus = locationResult.hasLocation ? '' : 'No GPS available';
         });
+
+        if (!locationResult.gpsEnabled) {
+          LocationService.showLocationDisabledDialog(
+            context,
+            onRetry: () => _loadData(),
+          );
+        } else if (locationResult.permission == LocationPermission.deniedForever) {
+          LocationService.showPermissionDeniedForeverDialog(context);
+        }
       }
 
       final results = await Future.wait([
-        api.getWeather(lat: position?.latitude, lng: position?.longitude),
+        api.getWeather(lat: locationResult.position?.latitude, lng: locationResult.position?.longitude),
         api.listCrops(),
       ]);
 
@@ -118,22 +128,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
               // Weather
               if (!_gpsAvailable && _gpsStatus.isNotEmpty)
-                Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.shade50,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.orange.shade200),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.location_off_outlined, size: 16, color: Colors.orange.shade700),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(_gpsStatus, style: TextStyle(fontSize: 12, color: Colors.orange.shade700)),
-                      ),
-                    ],
+                GestureDetector(
+                  onTap: () async {
+                    await LocationService.showLocationDisabledDialog(
+                      context,
+                      onRetry: () => _loadData(),
+                    );
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.orange.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.location_off_outlined, size: 16, color: Colors.orange.shade700),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(_gpsStatus, style: TextStyle(fontSize: 12, color: Colors.orange.shade700)),
+                        ),
+                        Icon(Icons.chevron_right, size: 16, color: Colors.orange.shade700),
+                      ],
+                    ),
                   ),
                 ),
               Container(

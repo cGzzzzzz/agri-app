@@ -453,5 +453,8 @@ class ApiService {
 }
 
 class Api {
-  static String get baseUrl => ''; // Relative URLs via nginx proxy
+  static String get baseUrl {
+    if (kIsWeb) return '';
+    return 'http://192.168.0.199:8000';
+  }
 }
