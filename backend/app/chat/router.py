@@ -28,7 +28,9 @@ def send_message(
         payload.response_language,
     )
     background_tasks.add_task(ChatService.generate_and_persist, conversation.id)
-    return ok(ChatAccepted(message_id=conversation.id, status=conversation.status), "Message accepted")
+    return ok(
+        ChatAccepted(message_id=conversation.id, status=conversation.status), "Message accepted"
+    )
 
 
 @router.get("/status/{message_id}")

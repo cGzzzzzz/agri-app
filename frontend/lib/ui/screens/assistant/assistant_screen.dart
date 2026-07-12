@@ -295,6 +295,7 @@ class _AssistantScreenState extends State<AssistantScreen>
 
     if (mounted) setState(() => _isTranscribing = true);
 
+    if (!mounted) return;
     final auth = Provider.of<AuthService>(context, listen: false);
     final api = ApiService(auth);
     final result = await api.transcribeAudio(

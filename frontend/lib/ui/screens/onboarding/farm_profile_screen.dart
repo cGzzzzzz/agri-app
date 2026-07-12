@@ -80,38 +80,37 @@ class _FarmProfileScreenState extends State<FarmProfileScreen> {
                   validator: (value) => value == null || value.isEmpty ? 'Area is required' : null,
                 ),
                 const SizedBox(height: 40),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (!_formKey.currentState!.validate()) return;
-
+                Builder(
+                  builder: (context) {
                     final onboarding = context.read<OnboardingData>();
-                    onboarding.update(
-                      farmName: _nameController.text.trim(),
-                      farmVillage: _villageController.text.trim(),
-                      farmDistrict: _districtController.text.trim(),
-                      farmState: _stateController.text.trim(),
-                      farmArea: double.tryParse(_areaController.text),
-                    );
-
-                    // Create farm via API
                     final auth = Provider.of<AuthService>(context, listen: false);
                     final api = ApiService(auth);
-                    if (auth.isAuthenticated) {
-                      final farm = await api.createFarm(
-                        name: onboarding.farmName!,
-                        village: onboarding.farmVillage?.isNotEmpty == true ? onboarding.farmVillage : null,
-                        district: onboarding.farmDistrict?.isNotEmpty == true ? onboarding.farmDistrict : null,
-                        state: onboarding.farmState?.isNotEmpty == true ? onboarding.farmState : null,
-                        area: onboarding.farmArea,
-                      );
-                      if (farm != null) onboarding.update(createdFarmId: farm.id);
-                    }
-
-                    if (mounted) {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => const CropRegistrationScreen()));
-                    }
+                    return ElevatedButton(
+                      onPressed: () async {
+                        if (!_formKey.currentState!.validate()) return;
+                        onboarding.update(
+                          farmName: _nameController.text.trim(),
+                          farmVillage: _villageController.text.trim(),
+                          farmDistrict: _districtController.text.trim(),
+                          farmState: _stateController.text.trim(),
+                          farmArea: double.tryParse(_areaController.text),
+                        );
+                        if (auth.isAuthenticated) {
+                          final farm = await api.createFarm(
+                            name: onboarding.farmName!,
+                            village: onboarding.farmVillage?.isNotEmpty == true ? onboarding.farmVillage : null,
+                            district: onboarding.farmDistrict?.isNotEmpty == true ? onboarding.farmDistrict : null,
+                            state: onboarding.farmState?.isNotEmpty == true ? onboarding.farmState : null,
+                            area: onboarding.farmArea,
+                          );
+                          if (farm != null) onboarding.update(createdFarmId: farm.id);
+                        }
+                        if (!context.mounted) return;
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => const CropRegistrationScreen()));
+                      },
+                      child: const Text('Continue'),
+                    );
                   },
-                  child: const Text('Continue'),
                 ),
               ],
             ),

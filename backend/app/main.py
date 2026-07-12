@@ -60,6 +60,7 @@ async def global_exception_handler(request: Request, exc: Exception):
         content={"detail": "Internal server error. Please try again later."},
     )
 
+
 app.include_router(auth_router, prefix=settings.api_prefix)
 app.include_router(users_router, prefix=settings.api_prefix)
 app.include_router(farms_router, prefix=settings.api_prefix)
@@ -194,7 +195,9 @@ def send_chat(
     user: User = Depends(get_current_user),
 ):
     farm, crop = _get_user_farm_and_crop(db, user)
-    conversation, _ = ChatService(db).create_pending(user, payload.get("message", ""), farm.id, crop.id)
+    conversation, _ = ChatService(db).create_pending(
+        user, payload.get("message", ""), farm.id, crop.id
+    )
     background_tasks.add_task(ChatService.generate_and_persist, conversation.id)
     return {"message_id": conversation.id, "status": conversation.status}
 

@@ -48,5 +48,5 @@ class VisionModelRegistry:
         self._ensure_loaded()
         for card in self._trained_cards:
             if card.task == task and (not crop or card.crop.lower() == crop.lower()):
-                    return True
+                return True
         return False

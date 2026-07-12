@@ -251,22 +251,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   // Logout
                   SizedBox(
                     width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: () async {
-                        await auth.logout();
-                        if (mounted) {
-                          Navigator.of(context).pushAndRemoveUntil(
-                            MaterialPageRoute(builder: (_) => const LoginScreen()),
-                            (route) => false,
-                          );
-                        }
+                    child: Builder(
+                      builder: (context) {
+                        final auth = Provider.of<AuthService>(context, listen: false);
+                        return OutlinedButton.icon(
+                          onPressed: () async {
+                            await auth.logout();
+                            if (!context.mounted) return;
+                            Navigator.of(context).pushAndRemoveUntil(
+                              MaterialPageRoute(builder: (_) => const LoginScreen()),
+                              (route) => false,
+                            );
+                          },
+                          icon: const Icon(Icons.logout, color: Color(0xFFD90429)),
+                          label: const Text('Sign Out', style: TextStyle(color: Color(0xFFD90429))),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Color(0xFFD90429)),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                        );
                       },
-                      icon: const Icon(Icons.logout, color: Color(0xFFD90429)),
-                      label: const Text('Sign Out', style: TextStyle(color: Color(0xFFD90429))),
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Color(0xFFD90429)),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
                     ),
                   ),
                   const SizedBox(height: 24),

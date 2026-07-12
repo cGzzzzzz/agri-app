@@ -108,7 +108,6 @@ class XAIReportBuilder:
                 import cv2
                 from PIL import Image
 
-
                 heatmap_uint8 = (heatmap * 255).astype(np.uint8)
                 heatmap_colored = cv2.applyColorMap(heatmap_uint8, cv2.COLORMAP_JET)
                 heatmap_colored = cv2.cvtColor(heatmap_colored, cv2.COLOR_BGR2RGB)

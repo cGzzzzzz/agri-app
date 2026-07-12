@@ -104,7 +104,9 @@ class FallbackLLMProvider(LLMProvider):
                     return result
                 logger.warning("Provider %s returned empty — trying next", provider.provider_name)
             except Exception:
-                logger.warning("Provider %s failed — trying next", provider.provider_name, exc_info=True)
+                logger.warning(
+                    "Provider %s failed — trying next", provider.provider_name, exc_info=True
+                )
         logger.error("All LLM providers failed or returned empty")
         return ""
 
@@ -124,9 +126,15 @@ class FallbackLLMProvider(LLMProvider):
                 if result:
                     self._last_used = provider
                     return result
-                logger.warning("Provider %s returned empty structured — trying next", provider.provider_name)
+                logger.warning(
+                    "Provider %s returned empty structured — trying next", provider.provider_name
+                )
             except Exception:
-                logger.warning("Provider %s failed structured — trying next", provider.provider_name, exc_info=True)
+                logger.warning(
+                    "Provider %s failed structured — trying next",
+                    provider.provider_name,
+                    exc_info=True,
+                )
         logger.error("All LLM providers failed or returned empty (structured)")
         return {}
 
@@ -140,7 +148,9 @@ def get_llm_provider() -> LLMProvider:
         try:
             from app.llm.nvidia_provider import NvidiaProvider
 
-            providers.append(NvidiaProvider(api_key=settings.nvidia_api_key, model=settings.nvidia_model))
+            providers.append(
+                NvidiaProvider(api_key=settings.nvidia_api_key, model=settings.nvidia_model)
+            )
         except Exception:
             logger.warning("Failed to initialize NVIDIA NIM provider", exc_info=True)
 
@@ -156,7 +166,9 @@ def get_llm_provider() -> LLMProvider:
         try:
             from app.llm.deepseek_provider import DeepSeekProvider
 
-            providers.append(DeepSeekProvider(api_key=settings.deepseek_api_key, model=settings.deepseek_model))
+            providers.append(
+                DeepSeekProvider(api_key=settings.deepseek_api_key, model=settings.deepseek_model)
+            )
         except Exception:
             logger.warning("Failed to initialize DeepSeek provider", exc_info=True)
 
@@ -164,7 +176,9 @@ def get_llm_provider() -> LLMProvider:
         try:
             from app.llm.gemini_provider import GeminiProvider
 
-            providers.append(GeminiProvider(api_key=settings.gemini_api_key, model=settings.gemini_model))
+            providers.append(
+                GeminiProvider(api_key=settings.gemini_api_key, model=settings.gemini_model)
+            )
         except Exception:
             logger.warning("Failed to initialize Gemini provider", exc_info=True)
 
@@ -172,7 +186,9 @@ def get_llm_provider() -> LLMProvider:
         try:
             from app.llm.openai_provider import OpenAIProvider
 
-            providers.append(OpenAIProvider(api_key=settings.openai_api_key, model=settings.openai_model))
+            providers.append(
+                OpenAIProvider(api_key=settings.openai_api_key, model=settings.openai_model)
+            )
         except Exception:
             logger.warning("Failed to initialize OpenAI provider", exc_info=True)
 

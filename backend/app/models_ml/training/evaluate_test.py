@@ -117,12 +117,16 @@ def evaluate_crop(crop: str, class_names: list[str], test_dir: Path, onnx_path: 
 
     avg_conf = np.mean(confidences) if confidences else 0
     correct_conf = (
-        np.mean([c for c, t, p in zip(confidences, true_labels, pred_labels, strict=False) if t == p])
+        np.mean(
+            [c for c, t, p in zip(confidences, true_labels, pred_labels, strict=False) if t == p]
+        )
         if correct > 0
         else 0
     )
     wrong_conf = (
-        np.mean([c for c, t, p in zip(confidences, true_labels, pred_labels, strict=False) if t != p])
+        np.mean(
+            [c for c, t, p in zip(confidences, true_labels, pred_labels, strict=False) if t != p]
+        )
         if (total - correct) > 0
         else 0
     )

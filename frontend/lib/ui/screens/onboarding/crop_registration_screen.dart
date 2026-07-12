@@ -88,34 +88,33 @@ class _CropRegistrationScreenState extends State<CropRegistrationScreen> {
                   keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 40),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (!_formKey.currentState!.validate()) return;
-
+                Builder(
+                  builder: (context) {
                     final auth = Provider.of<AuthService>(context, listen: false);
-                    final api = ApiService(auth);
-
                     final onboarding = context.read<OnboardingData>();
-                    if (auth.isAuthenticated && onboarding.createdFarmId != null) {
-                      await api.createCrop(
-                        farmId: onboarding.createdFarmId!,
-                        cropType: selectedCrop!,
-                        cropVariety: _varietyController.text.trim().isEmpty ? null : _varietyController.text.trim(),
-                        sowingDate: selectedDate != null ? '${selectedDate!.year}-${selectedDate!.month.toString().padLeft(2, '0')}-${selectedDate!.day.toString().padLeft(2, '0')}' : null,
-                        fieldSize: _fieldSizeController.text.trim().isEmpty ? null : _fieldSizeController.text.trim(),
-                      );
-                    }
-
-                    context.read<OnboardingData>().reset();
-
-                    if (mounted) {
-                      Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute(builder: (context) => const MainNavigation()),
-                        (route) => false,
-                      );
-                    }
+                    final api = ApiService(auth);
+                    return ElevatedButton(
+                      onPressed: () async {
+                        if (!_formKey.currentState!.validate()) return;
+                        if (auth.isAuthenticated && onboarding.createdFarmId != null) {
+                          await api.createCrop(
+                            farmId: onboarding.createdFarmId!,
+                            cropType: selectedCrop!,
+                            cropVariety: _varietyController.text.trim().isEmpty ? null : _varietyController.text.trim(),
+                            sowingDate: selectedDate != null ? '${selectedDate!.year}-${selectedDate!.month.toString().padLeft(2, '0')}-${selectedDate!.day.toString().padLeft(2, '0')}' : null,
+                            fieldSize: _fieldSizeController.text.trim().isEmpty ? null : _fieldSizeController.text.trim(),
+                          );
+                        }
+                        if (!context.mounted) return;
+                        onboarding.reset();
+                        Navigator.of(context).pushAndRemoveUntil(
+                          MaterialPageRoute(builder: (context) => const MainNavigation()),
+                          (route) => false,
+                        );
+                      },
+                      child: const Text('Complete Onboarding'),
+                    );
                   },
-                  child: const Text('Complete Onboarding'),
                 ),
               ],
             ),

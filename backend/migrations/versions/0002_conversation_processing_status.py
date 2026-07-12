@@ -15,7 +15,10 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.add_column("conversations", sa.Column("status", sa.String(length=20), nullable=False, server_default="completed"))
+    op.add_column(
+        "conversations",
+        sa.Column("status", sa.String(length=20), nullable=False, server_default="completed"),
+    )
     op.add_column("conversations", sa.Column("error_message", sa.Text(), nullable=True))
     op.create_index(op.f("ix_conversations_status"), "conversations", ["status"], unique=False)
 

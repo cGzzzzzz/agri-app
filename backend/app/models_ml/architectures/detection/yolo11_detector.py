@@ -142,7 +142,9 @@ class YOLODetector:
             )
             return results
         except ImportError as err:
-            raise ImportError("ultralytics is required. Install with: pip install ultralytics") from err
+            raise ImportError(
+                "ultralytics is required. Install with: pip install ultralytics"
+            ) from err
 
     @classmethod
     def export_onnx(cls, model_path: Path, output_path: Path, imgsz: int = 640):
@@ -153,4 +155,6 @@ class YOLODetector:
             model.export(format="onnx", imgsz=imgsz)
             logger.info("Exported YOLO to ONNX: %s", output_path)
         except ImportError as err:
-            raise ImportError("ultralytics is required. Install with: pip install ultralytics") from err
+            raise ImportError(
+                "ultralytics is required. Install with: pip install ultralytics"
+            ) from err

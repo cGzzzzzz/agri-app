@@ -84,7 +84,9 @@ class ChatService:
                 raise ChatGenerationError("The conversation user no longer exists.")
 
             service = cls(db)
-            context = service.context_builder.build(user, conversation.farm_id, conversation.crop_id)
+            context = service.context_builder.build(
+                user, conversation.farm_id, conversation.crop_id
+            )
             response_language = "en"
             if conversation.context_snapshot:
                 try:

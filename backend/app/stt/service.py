@@ -63,7 +63,9 @@ class SttService:
             return _filter_hallucinations(text)
         except httpx.HTTPStatusError as e:
             logger.error("Groq STT HTTP error %s: %s", e.response.status_code, e.response.text)
-            raise RuntimeError(f"STT failed ({e.response.status_code}): {e.response.text[:200]}") from e
+            raise RuntimeError(
+                f"STT failed ({e.response.status_code}): {e.response.text[:200]}"
+            ) from e
         except ValueError:
             raise
         except Exception as e:
