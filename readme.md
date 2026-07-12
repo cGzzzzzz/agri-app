@@ -820,6 +820,29 @@ Whisper
 
 ---
 
+# ML Model Training
+
+The disease classification and severity estimation models are trained on the PlantVillage dataset using EfficientNet-B0 + CBAM architecture.
+
+For full training instructions, see [`backend/TRAINING.md`](backend/TRAINING.md).
+
+Quick start:
+
+```bash
+cd backend
+pip install -r requirements.txt kagglehub
+
+# Download and prepare dataset
+python -m app.models_ml.training.prepare_plantvillage
+
+# Train all models (GPU recommended)
+python -m app.models_ml.training.run_training --epochs 30 --device cuda
+```
+
+Models are exported as ONNX to `backend/artifacts/` and loaded automatically by the backend.
+
+---
+
 # Deployment Architecture
 
 ```text
