@@ -40,7 +40,7 @@ jobs:
       - run: python -m pytest tests/ -q --tb=short
 
   frontend-test:
-    name: Frontend Build
+    name: Frontend Test
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -54,4 +54,21 @@ jobs:
           cache: true
       - run: flutter pub get
       - run: flutter analyze --no-pub
+      - run: flutter test --no-pub
+
+  frontend-build:
+    name: Frontend Build
+    runs-on: ubuntu-latest
+    needs: frontend-test
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.44.6"
+          channel: stable
+          cache: true
+      - run: flutter pub get
       - run: flutter build web --release --no-pub

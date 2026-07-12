@@ -1,18 +1,18 @@
 import 'dart:async';
 import 'dart:math';
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:record/record.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
-import '../../../core/theme/app_theme.dart';
 import '../../../services/api_service.dart';
 import '../../../services/auth_service.dart';
+import 'chat_input_bar.dart';
+import 'message_bubble.dart';
+import 'voice_status_bar.dart';
 
 class AssistantScreen extends StatefulWidget {
   const AssistantScreen({super.key});
@@ -511,8 +511,6 @@ class _AssistantScreenState extends State<AssistantScreen>
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = Theme.of(context).primaryColor;
-    final borderLight = Colors.grey.shade200;
     final voiceActive = _isAnyVoiceActive;
     final voiceLoading = kIsWeb && _isTranscribing;
 
@@ -526,8 +524,7 @@ class _AssistantScreenState extends State<AssistantScreen>
             icon: Icon(Icons.language, size: 18, color: Colors.grey.shade700),
             label: Text(
               '$_currentLanguageLabel reply',
-              style:
-                  TextStyle(fontSize: 12, color: Colors.grey.shade700),
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
             ),
           ),
         ],
@@ -557,7 +554,7 @@ class _AssistantScreenState extends State<AssistantScreen>
                         child: CircularProgressIndicator(
                             strokeWidth: 2,
                             valueColor: AlwaysStoppedAnimation<Color>(
-                                primaryColor)),
+                                Theme.of(context).primaryColor)),
                       ),
                     ),
                   );
@@ -565,217 +562,29 @@ class _AssistantScreenState extends State<AssistantScreen>
 
                 final msgIndex = messages.length - 1 - (_isResponding ? index - 1 : index);
                 final msg = messages[msgIndex];
-                final isUser = msg['isUser'] as bool;
-                final isError = msg['isError'] == true;
-                return Align(
-                  alignment:
-                      isUser ? Alignment.centerRight : Alignment.centerLeft,
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: isError
-                          ? const Color(0xFFFFF2F2)
-                          : (isUser ? primaryColor : const Color(0xFFF1F3F5)),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    constraints: BoxConstraints(
-                        maxWidth: MediaQuery.of(context).size.width * 0.75),
-                    child: SelectableText(
-                      msg['text'] as String,
-                      style: TextStyle(
-                          color: isError
-                              ? const Color(0xFF8A0000)
-                              : isUser
-                              ? Colors.white
-                              : const Color(0xFF1C1E21),
-                          fontSize: 14,
-                          height: 1.4,
-                          fontFamilyFallback: AppTheme.multilingualFontFallback),
-                    ),
-                  ),
+                return MessageBubble(
+                  text: msg['text'] as String,
+                  isUser: msg['isUser'] as bool,
+                  isError: msg['isError'] == true,
                 );
               },
             ),
           ),
-          Container(
-            padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-            decoration: BoxDecoration(
-                color: const Color(0xFFF8F9FA),
-                border: Border(top: BorderSide(color: borderLight))),
-            child: SafeArea(
-              top: false,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (voiceActive || voiceLoading)
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 10),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: voiceLoading
-                            ? Colors.orange.shade50
-                            : Colors.red.shade50,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                            color: voiceLoading
-                                ? Colors.orange.shade200
-                                : Colors.red.shade200),
-                      ),
-                      child: Row(
-                        children: [
-                          AnimatedBuilder(
-                            animation: _pulseAnimation,
-                            builder: (context, child) => Transform.scale(
-                              scale: _pulseAnimation.value,
-                              child: child,
-                            ),
-                            child: Container(
-                              width: 10,
-                              height: 10,
-                              decoration: BoxDecoration(
-                                  color: voiceLoading
-                                      ? Colors.orange
-                                      : Colors.red,
-                                  shape: BoxShape.circle),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              voiceLoading
-                                  ? 'Transcribing...'
-                                  : (kIsWeb
-                                      ? 'Listening... auto-stops when you stop speaking'
-                                      : (_lastWords.isEmpty
-                                          ? 'Listening... Speak now'
-                                          : _lastWords)),
-                              style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: (voiceLoading || kIsWeb) ? FontWeight.w600 : FontWeight.normal,
-                                  color: voiceLoading
-                                      ? Colors.orange.shade700
-                                      : Colors.red.shade700,
-                                  fontStyle: (_lastWords.isEmpty && !voiceLoading && !kIsWeb)
-                                      ? FontStyle.italic
-                                      : FontStyle.normal),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          if (!voiceLoading) ...[
-                            const SizedBox(width: 8),
-                            MouseRegion(
-                              cursor: SystemMouseCursors.click,
-                              child: GestureDetector(
-                                onTap: _toggleVoice,
-                                child: Icon(Icons.stop_circle,
-                                    color: Colors.red.shade600, size: 28),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      MouseRegion(
-                        cursor: SystemMouseCursors.click,
-                        child: GestureDetector(
-                          onTap: voiceLoading ? null : _toggleVoice,
-                          child: AnimatedBuilder(
-                            animation: _pulseAnimation,
-                            builder: (context, child) => Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                color: voiceActive
-                                    ? Colors.red
-                                    : (voiceLoading
-                                        ? Colors.orange
-                                        : primaryColor),
-                                shape: BoxShape.circle,
-                                boxShadow: voiceActive
-                                    ? [
-                                        BoxShadow(
-                                            color: Colors.red
-                                                .withValues(alpha: 0.3),
-                                            blurRadius:
-                                                8 * _pulseAnimation.value,
-                                            spreadRadius:
-                                                2 * _pulseAnimation.value)
-                                      ]
-                                    : null,
-                              ),
-                              child: Icon(
-                                voiceActive ? Icons.stop : Icons.mic,
-                                color: Colors.white,
-                                size: 22,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: TextField(
-                          controller: _controller,
-                          style: const TextStyle(fontSize: 14),
-                          maxLines: null,
-                          textInputAction: TextInputAction.send,
-                          onSubmitted: (_) => _sendMessage(),
-                          decoration: InputDecoration(
-                            hintText: voiceActive
-                                ? (kIsWeb
-                                    ? 'Recording...'
-                                    : 'Listening...')
-                                : 'Ask about crops, diseases, weather...',
-                            fillColor: Colors.white,
-                            filled: true,
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 12),
-                            border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(24),
-                                borderSide:
-                                    BorderSide(color: borderLight)),
-                            enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(24),
-                                borderSide:
-                                    BorderSide(color: borderLight)),
-                            focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(24),
-                                borderSide:
-                                    BorderSide(color: primaryColor)),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      MouseRegion(
-                        cursor: SystemMouseCursors.click,
-                        child: GestureDetector(
-                          onTap: _isResponding ? null : _sendMessage,
-                          child: Container(
-                            width: 48,
-                            height: 48,
-                            decoration: BoxDecoration(
-                              color: _isResponding
-                                  ? Colors.grey.shade300
-                                  : primaryColor,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.arrow_upward,
-                                color: Colors.white, size: 20),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+          VoiceStatusBar(
+            voiceActive: voiceActive,
+            voiceLoading: voiceLoading,
+            lastWords: _lastWords,
+            pulseAnimation: _pulseAnimation,
+            onToggleVoice: _toggleVoice,
+          ),
+          ChatInputBar(
+            controller: _controller,
+            isResponding: _isResponding,
+            voiceActive: voiceActive,
+            voiceLoading: voiceLoading,
+            lastWords: _lastWords,
+            onToggleVoice: _toggleVoice,
+            onSend: _sendMessage,
           ),
         ],
       ),

@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
 import 'assistant/assistant_screen.dart';
@@ -21,7 +19,6 @@ class _MainNavigationState extends State<MainNavigation> {
   static const _tabNames = ['home', 'assistant', 'scan', 'farm', 'profile'];
 
   late int _currentIndex;
-  bool _hashInitialized = false;
 
   final List<Widget> _screens = const [
     DashboardScreen(),
@@ -40,7 +37,6 @@ class _MainNavigationState extends State<MainNavigation> {
     } else {
       _currentIndex = 0;
     }
-    _hashInitialized = true;
     listenHashChange(_onHashChanged);
   }
 
@@ -60,7 +56,10 @@ class _MainNavigationState extends State<MainNavigation> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _screens[_currentIndex],
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _screens,
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: _switchTab,

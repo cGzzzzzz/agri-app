@@ -84,24 +84,27 @@ class _FarmProfileScreenState extends State<FarmProfileScreen> {
                   onPressed: () async {
                     if (!_formKey.currentState!.validate()) return;
 
-                    OnboardingData.farmName = _nameController.text.trim();
-                    OnboardingData.farmVillage = _villageController.text.trim();
-                    OnboardingData.farmDistrict = _districtController.text.trim();
-                    OnboardingData.farmState = _stateController.text.trim();
-                    OnboardingData.farmArea = double.tryParse(_areaController.text);
+                    final onboarding = context.read<OnboardingData>();
+                    onboarding.update(
+                      farmName: _nameController.text.trim(),
+                      farmVillage: _villageController.text.trim(),
+                      farmDistrict: _districtController.text.trim(),
+                      farmState: _stateController.text.trim(),
+                      farmArea: double.tryParse(_areaController.text),
+                    );
 
                     // Create farm via API
                     final auth = Provider.of<AuthService>(context, listen: false);
                     final api = ApiService(auth);
                     if (auth.isAuthenticated) {
                       final farm = await api.createFarm(
-                        name: OnboardingData.farmName!,
-                        village: OnboardingData.farmVillage?.isNotEmpty == true ? OnboardingData.farmVillage : null,
-                        district: OnboardingData.farmDistrict?.isNotEmpty == true ? OnboardingData.farmDistrict : null,
-                        state: OnboardingData.farmState?.isNotEmpty == true ? OnboardingData.farmState : null,
-                        area: OnboardingData.farmArea,
+                        name: onboarding.farmName!,
+                        village: onboarding.farmVillage?.isNotEmpty == true ? onboarding.farmVillage : null,
+                        district: onboarding.farmDistrict?.isNotEmpty == true ? onboarding.farmDistrict : null,
+                        state: onboarding.farmState?.isNotEmpty == true ? onboarding.farmState : null,
+                        area: onboarding.farmArea,
                       );
-                      if (farm != null) OnboardingData.createdFarmId = farm.id;
+                      if (farm != null) onboarding.update(createdFarmId: farm.id);
                     }
 
                     if (mounted) {

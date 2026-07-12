@@ -1,8 +1,6 @@
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:provider/provider.dart';
 import '../core/constants/api_constants.dart';
 import '../models/crop.dart';
 import '../models/farm.dart';

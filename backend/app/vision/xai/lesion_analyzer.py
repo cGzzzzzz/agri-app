@@ -74,7 +74,6 @@ class LesionAnalyzer:
         smoothed = cv2.filter2D(gray.astype(float), -1, kernel)
         homogeneity = float(1.0 - np.std(gray.astype(float) - smoothed) / 128.0)
 
-        is_necrotic = brown_ratio > 0.3 or gray_ratio > 0.2
         color_profile = self._analyze_color(patch)
         is_necrotic = color_profile.brown_ratio > 0.3 or color_profile.gray_ratio > 0.2
 

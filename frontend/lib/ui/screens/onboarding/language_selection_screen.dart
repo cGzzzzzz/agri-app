@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../models/onboarding_data.dart';
 import 'farm_profile_screen.dart';
 
@@ -38,7 +39,7 @@ class LanguageSelectionScreen extends StatelessWidget {
                   final lang = languages[index];
                   return InkWell(
                     onTap: () {
-                      OnboardingData.selectedLanguage = lang['code'];
+                      context.read<OnboardingData>().update(selectedLanguage: lang['code']);
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(builder: (context) => const FarmProfileScreen()),

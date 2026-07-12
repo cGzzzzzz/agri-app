@@ -95,9 +95,10 @@ class _CropRegistrationScreenState extends State<CropRegistrationScreen> {
                     final auth = Provider.of<AuthService>(context, listen: false);
                     final api = ApiService(auth);
 
-                    if (auth.isAuthenticated && OnboardingData.createdFarmId != null) {
+                    final onboarding = context.read<OnboardingData>();
+                    if (auth.isAuthenticated && onboarding.createdFarmId != null) {
                       await api.createCrop(
-                        farmId: OnboardingData.createdFarmId!,
+                        farmId: onboarding.createdFarmId!,
                         cropType: selectedCrop!,
                         cropVariety: _varietyController.text.trim().isEmpty ? null : _varietyController.text.trim(),
                         sowingDate: selectedDate != null ? '${selectedDate!.year}-${selectedDate!.month.toString().padLeft(2, '0')}-${selectedDate!.day.toString().padLeft(2, '0')}' : null,
@@ -105,7 +106,7 @@ class _CropRegistrationScreenState extends State<CropRegistrationScreen> {
                       );
                     }
 
-                    OnboardingData.reset();
+                    context.read<OnboardingData>().reset();
 
                     if (mounted) {
                       Navigator.of(context).pushAndRemoveUntil(

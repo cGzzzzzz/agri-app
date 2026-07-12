@@ -21,16 +21,18 @@ class AuthService extends ChangeNotifier {
 
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
-
-    // Clear tokens on startup to force fresh login (avoids 401s on container restart)
-    _accessToken = null;
-    _refreshToken = null;
-    _user = null;
-    await prefs.remove(_tokenKey);
-    await prefs.remove(_refreshKey);
-    await prefs.remove(_userKey);
-    debugPrint('Cleared tokens on startup for fresh session');
-
+    _accessToken = prefs.getString(_tokenKey);
+    _refreshToken = prefs.getString(_refreshKey);
+    final userJson = prefs.getString(_userKey);
+    if (userJson != null) {
+      try {
+        _user = AppUser.fromJson(Map<String, dynamic>.from(
+            Map<String, dynamic>.from(json.decode(userJson) as Map)));
+      } catch (_) {
+        await prefs.remove(_userKey);
+        _user = null;
+      }
+    }
     _initialized = true;
     notifyListeners();
   }

@@ -7,8 +7,18 @@ from app.config import get_settings
 
 settings = get_settings()
 
-connect_args = {"check_same_thread": False} if settings.database_url.startswith("sqlite") else {}
-engine = create_engine(settings.database_url, connect_args=connect_args, pool_pre_ping=True)
+_connect_args = {"check_same_thread": False} if settings.database_url.startswith("sqlite") else {}
+_engine_kwargs: dict = {
+    "connect_args": _connect_args,
+    "pool_pre_ping": True,
+}
+if not settings.database_url.startswith("sqlite"):
+    _engine_kwargs["pool_size"] = 10
+    _engine_kwargs["max_overflow"] = 20
+    _engine_kwargs["pool_timeout"] = 30
+    _engine_kwargs["pool_recycle"] = 1800
+
+engine = create_engine(settings.database_url, **_engine_kwargs)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 

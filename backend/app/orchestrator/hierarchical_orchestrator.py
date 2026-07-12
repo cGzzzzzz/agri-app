@@ -9,12 +9,11 @@ from app.config import get_settings
 from app.models import User
 from app.orchestrator.context_builder import ContextBuilder
 from app.orchestrator.crop_resolver import CropResolver
-from app.orchestrator.disease_detector import DiseaseDetector
+from app.orchestrator.disease_detector import DiseaseDetector, SeverityEstimatorStage
 from app.orchestrator.image_preprocessor_stage import ImagePreprocessorStage
 from app.orchestrator.input_validator import InputValidator
 from app.orchestrator.persistence_layer import PersistenceLayer
 from app.orchestrator.response_builder import ResponseBuilder
-from app.orchestrator.severity_estimator import SeverityEstimatorStage
 from app.schemas.disease import (
     DiseaseAnalysisRead,
     PredictorOutput,
